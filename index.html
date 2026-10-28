@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prof. (Dr.) Mansoor Ahmad Dar | Professor & HOD Psychiatry, GMC Anantnag</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdfa',
+              100: '#ccfbf1',
+              200: '#99f6e4',
+              500: '#14b8a6',
+              600: '#0d9488',
+              700: '#0f766e',
+              800: '#115e59',
+              900: '#134e4a',
+              950: '#042f2e'
+            },
+            medical: {
+              dark: '#0f172a',
+              card: '#ffffff',
+              border: '#e2e8f0'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            serif: ['Merriweather', 'Georgia', 'serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap');
+
+    /* Ticker animation */
+    @keyframes ticker {
+      0% { transform: translate3d(0, 0, 0); }
+      100% { transform: translate3d(-50%, 0, 0); }
+    }
+    .ticker-track {
+      display: inline-flex;
+      white-space: nowrap;
+      animation: ticker 28s linear infinite;
+    }
+    .ticker-track:hover {
+      animation-play-state: paused;
+    }
+
+    /* Soft backdrop blur */
+    .glass-nav {
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .badge-glow {
+      box-shadow: 0 0 15px rgba(20, 184, 166, 0.35);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased selection:bg-teal-100 selection:text-teal-900">
+
+  <!-- TOP EMERGENCY NATIONAL CRISIS BAR -->
+  <div class="bg-rose-900 text-rose-50 text-xs sm:text-sm py-2 px-4 flex items-center justify-between border-b border-rose-800">
+    <div class="max-w-7xl mx-auto w-full flex items-center justify-between gap-3">
+      <div class="flex items-center gap-2 font-medium overflow-hidden text-ellipsis whitespace-nowrap">
+        <span class="inline-flex items-center justify-center w-2 h-2 rounded-full bg-red-400 animate-ping"></span>
+        <strong class="font-bold">24x7 Mental Health Emergency:</strong>
+        <span class="hidden md:inline">Dial National Helpline</span>
+        <a href="tel:14416" class="underline font-bold text-amber-300 hover:text-white">Tele-MANAS (14416)</a> 
+        <span class="hidden sm:inline">| Hospital Emergency Casualty: GMC Anantnag</span>
+      </div>
+      <a href="tel:14416" class="px-2.5 py-0.5 rounded bg-rose-800 hover:bg-rose-700 text-[11px] font-bold text-white shrink-0">
+        Emergency Call
+      </a>
+    </div>
+  </div>
+
+  <!-- LIVE DAILY ANNOUNCEMENTS & OPD TICKER -->
+  <div class="bg-teal-950 text-teal-100 text-xs py-2 overflow-hidden border-b border-teal-900 relative">
+    <div class="max-w-7xl mx-auto px-4 flex items-center">
+      <span class="bg-teal-800 text-teal-200 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded mr-3 shrink-0 flex items-center gap-1">
+        <i class="ph-bold ph-broadcast text-teal-300"></i> Daily OPD Bulletin
+      </span>
+      <div class="overflow-hidden relative w-full">
+        <div class="ticker-track">
+          <span class="mx-4 font-medium flex items-center gap-2">
+            <i class="ph-fill ph-check-circle text-emerald-400"></i> <strong>Today's OPD Status:</strong> GMC Anantnag Psychiatry OPD is active from 10:00 AM - 04:00 PM.
+          </span>
+          <span class="mx-4 font-medium flex items-center gap-2">
+            <i class="ph-fill ph-calendar-check text-amber-400"></i> <strong>ExpectCare Evening Clinic:</strong> Cheeni Chowk (Tue, Thu & Fri) Consultation slots open. Contact: +91 9906927006.
+          </span>
+          <span class="mx-4 font-medium flex items-center gap-2">
+            <i class="ph-fill ph-heartbeat text-rose-400"></i> <strong>Daily Wellness Advice:</strong> Adequate sleep and early clinical screening are vital for anxiety and depressive episodes.
+          </span>
+          <!-- Duplicate for smooth seamless loop -->
+          <span class="mx-4 font-medium flex items-center gap-2">
+            <i class="ph-fill ph-check-circle text-emerald-400"></i> <strong>Today's OPD Status:</strong> GMC Anantnag Psychiatry OPD is active from 10:00 AM - 04:00 PM.
+          </span>
+          <span class="mx-4 font-medium flex items-center gap-2">
+            <i class="ph-fill ph-calendar-check text-amber-400"></i> <strong>ExpectCare Evening Clinic:</strong> Cheeni Chowk (Tue, Thu & Fri) Consultation slots open. Contact: +91 9906927006.
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NAVIGATION HEADER -->
+  <header class="sticky top-0 z-40 glass-nav border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-20">
+        
+        <!-- Brand & Hospital Affiliation -->
+        <a href="#home" class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-teal-800 to-teal-600 flex items-center justify-center text-white shadow-md shadow-teal-900/20">
+            <i class="ph ph-brain text-2xl"></i>
+          </div>
+          <div>
+            <span class="block text-base sm:text-lg font-bold text-slate-900 tracking-tight leading-tight">Prof. (Dr.) Mansoor Ahmad Dar</span>
+            <span class="block text-xs font-semibold text-teal-700">Professor & Head (HOD) • Dept. of Psychiatry, GMC Anantnag</span>
+          </div>
+        </a>
+
+        <!-- Desktop Navigation -->
+        <nav class="hidden lg:flex items-center space-x-7 text-sm font-semibold text-slate-600">
+          <a href="#about" class="hover:text-teal-700 transition-colors">Profile & Leadership</a>
+          <a href="#clinics" class="hover:text-teal-700 transition-colors">Both Clinics & Timings</a>
+          <a href="#services" class="hover:text-teal-700 transition-colors">Specialties</a>
+          <a href="#research" class="hover:text-teal-700 transition-colors">Research (40+)</a>
+          <a href="#notifications-board" class="hover:text-teal-700 transition-colors">Live Updates</a>
+        </nav>
+
+        <!-- CTA & Quick Mobile Action -->
+        <div class="flex items-center gap-3">
+          <a href="#book-appointment" class="hidden sm:inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-semibold text-xs sm:text-sm shadow-md transition-all active:scale-95">
+            <i class="ph-bold ph-calendar-plus text-base"></i>
+            <span>Book Appointment</span>
+          </a>
+
+          <button id="mobileMenuBtn" aria-label="Toggle mobile menu" class="lg:hidden p-2 rounded-xl text-slate-700 hover:bg-slate-100">
+            <i class="ph ph-list text-2xl" id="menuToggleIcon"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Dropdown -->
+    <div id="mobileMenu" class="hidden lg:hidden border-b border-slate-200 bg-white px-5 py-4 space-y-3">
+      <a href="#about" class="block py-2 text-slate-700 font-medium mobile-nav-link">About Professor & HOD</a>
+      <a href="#clinics" class="block py-2 text-slate-700 font-medium mobile-nav-link">2 Clinics & Timings</a>
+      <a href="#services" class="block py-2 text-slate-700 font-medium mobile-nav-link">Clinical Psychiatry Services</a>
+      <a href="#research" class="block py-2 text-slate-700 font-medium mobile-nav-link">Research & Academic Work</a>
+      <a href="#notifications-board" class="block py-2 text-slate-700 font-medium mobile-nav-link">Daily Notifications</a>
+      <a href="#book-appointment" class="block w-full text-center py-3 rounded-xl bg-teal-700 text-white font-bold text-sm mobile-nav-link">
+        Book Online Consultation
+      </a>
+    </div>
+  </header>
+
+  <!-- HERO SECTION WITH DOCTOR PROFILE & ACADEMIC CREDENTIALS -->
+  <section id="home" class="relative pt-10 pb-16 md:py-20 bg-gradient-to-b from-teal-50/70 via-white to-slate-50 border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+        
+        <!-- Left: Academic Title and Clinical Overview -->
+        <div class="lg:col-span-7 space-y-5 text-center lg:text-left">
+          
+          <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-teal-100 text-teal-900 text-xs font-bold border border-teal-200 shadow-sm">
+            <i class="ph-fill ph-seal-check text-teal-700 text-sm"></i>
+            Professor & Head of Department | GMC Anantnag
+          </div>
+
+          <h1 class="text-3xl sm:text-5xl font-serif font-bold text-slate-900 leading-tight">
+            Academic Clinical Leadership in <span class="text-teal-700 italic">Psychiatry & Mental Health</span>.
+          </h1>
+
+          <p class="text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto lg:mx-0">
+            <strong>Prof. (Dr.) Mansoor Ahmad Dar (MBBS, MD Psychiatry)</strong> is the Professor and Head of the Department of Psychiatry at <strong>Government Medical College (GMC) Anantnag</strong>. A premier psychiatrist and medical researcher in South Kashmir providing compassionate, evidence-driven mental health therapies and addiction medicine.
+          </p>
+
+          <!-- Dual Clinic Access Alert Box -->
+          <div class="p-4 rounded-2xl bg-white border border-teal-200 shadow-sm text-left max-w-xl mx-auto lg:mx-0 flex items-start gap-3.5">
+            <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center shrink-0 mt-0.5">
+              <i class="ph-bold ph-map-pin-line text-xl"></i>
+            </div>
+            <div class="text-xs sm:text-sm text-slate-700">
+              <span class="font-bold text-slate-900 block text-sm">Dual Clinic Access for Patients:</span>
+              <strong>Clinic 1:</strong> ExpectCare Clinic, Cheeni Chowk Anantnag (Tue, Thu, Fri evenings)<br>
+              <strong>Clinic 2:</strong> Associated Hospital OPD Block, GMC Anantnag (General Hospital OPD)
+            </div>
+          </div>
+
+          <!-- Quick Action Buttons -->
+          <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3.5 pt-2">
+            <a href="#book-appointment" class="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2">
+              <i class="ph-bold ph-calendar-check text-lg"></i>
+              <span>Book Appointment at Either Clinic</span>
+            </a>
+            <a href="https://wa.me/919906927006?text=Assalam%20o%20Alaikum,%20I%20would%20like%20to%20inquire%20about%20an%20appointment%20with%20Prof.%20Dr.%20Mansoor%20Ahmad%20Dar." target="_blank" rel="noopener" class="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2">
+              <i class="ph-bold ph-whatsapp-logo text-lg"></i>
+              <span>WhatsApp Inquiries</span>
+            </a>
+          </div>
+
+          <!-- Academic and Clinical Stats -->
+          <div class="pt-4 grid grid-cols-3 gap-4 border-t border-slate-200/90 text-left max-w-lg mx-auto lg:mx-0">
+            <div>
+              <div class="text-2xl font-extrabold text-slate-900">43+</div>
+              <div class="text-xs text-slate-500 font-semibold">Indexed Research Studies</div>
+            </div>
+            <div>
+              <div class="text-2xl font-extrabold text-slate-900">HOD</div>
+              <div class="text-xs text-slate-500 font-semibold">GMC Anantnag Psychiatry</div>
+            </div>
+            <div>
+              <div class="text-2xl font-extrabold text-slate-900">100%</div>
+              <div class="text-xs text-slate-500 font-semibold">Confidential Treatment</div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right: Doctor Photo Card & Verified Profile -->
+        <div class="lg:col-span-5">
+          <div class="relative max-w-sm sm:max-w-md mx-auto">
+            
+            <div class="absolute -inset-1.5 bg-gradient-to-r from-teal-500 to-emerald-400 rounded-3xl blur-xl opacity-30"></div>
+
+            <div class="relative bg-white rounded-3xl border border-slate-200 p-6 shadow-xl">
+              
+              <!-- Doctor Portrait Container -->
+              <div class="relative w-full aspect-[4/4] rounded-2xl bg-gradient-to-b from-teal-900 via-teal-800 to-slate-900 overflow-hidden flex flex-col items-center justify-end border border-teal-700 text-white shadow-inner">
+                
+                <!-- Stylized Academic / Medical Vector Silhouette & Photo Frame -->
+                <div class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+                  <div class="w-32 h-32 rounded-full border-4 border-teal-300/60 bg-teal-700 flex items-center justify-center text-5xl text-teal-100 shadow-xl mb-3">
+                    <i class="ph-fill ph-user-circle"></i>
+                  </div>
+                  <h3 class="text-xl font-bold tracking-tight text-white">Prof. (Dr.) Mansoor Ahmad Dar</h3>
+                  <p class="text-xs text-teal-200 font-medium">MBBS, MD Psychiatry</p>
+                  <span class="mt-1 text-[11px] px-3 py-0.5 rounded-full bg-teal-600/60 border border-teal-400 text-teal-100">
+                    HOD Department of Psychiatry
+                  </span>
+                </div>
+
+                <!-- Verified Overlay Badge -->
+                <div class="absolute top-3 left-3 bg-white/95 backdrop-blur px-3 py-1 rounded-full text-[11px] font-bold text-teal-900 shadow flex items-center gap-1.5 border border-teal-200">
+                  <i class="ph-fill ph-seal-check text-teal-600 text-sm"></i>
+                  <span>GMC Faculty Verified</span>
+                </div>
+
+                <div class="absolute top-3 right-3 bg-teal-900/90 text-white px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide">
+                  South Kashmir
+                </div>
+
+              </div>
+
+              <!-- Key Credentials Detail Table -->
+              <div class="mt-5 space-y-2.5 text-xs text-slate-600">
+                <div class="flex items-center justify-between py-1.5 border-b border-slate-100">
+                  <span class="font-semibold text-slate-700">Official Designation:</span>
+                  <span class="font-bold text-teal-900">Professor & Head of Department</span>
+                </div>
+                <div class="flex items-center justify-between py-1.5 border-b border-slate-100">
+                  <span class="font-semibold text-slate-700">Medical College:</span>
+                  <span class="font-bold text-slate-800">Govt. Medical College (GMC) Anantnag</span>
+                </div>
+                <div class="flex items-center justify-between py-1.5 border-b border-slate-100">
+                  <span class="font-semibold text-slate-700">Private Evening Clinic:</span>
+                  <span class="font-bold text-slate-800">ExpectCare, Cheeni Chowk Anantnag</span>
+                </div>
+                <div class="flex items-center justify-between py-1.5">
+                  <span class="font-semibold text-slate-700">Special Focus:</span>
+                  <span class="font-bold text-teal-800">Mood Disorders, OCD, Addiction Medicine</span>
+                </div>
+              </div>
+
+              <!-- Quick Booking Trigger Button -->
+              <div class="mt-4 pt-3 border-t border-slate-100">
+                <a href="#book-appointment" class="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-teal-700 text-white text-xs font-bold transition-all flex items-center justify-center gap-2">
+                  <i class="ph-bold ph-calendar-plus"></i> Select Clinic & Book Date
+                </a>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- LIVE CLINIC UPDATES & DAILY NOTIFICATION BOARD -->
+  <section id="notifications-board" class="py-14 bg-white border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+        <div>
+          <span class="text-teal-700 font-bold text-xs uppercase tracking-wider">Live Desk & Daily Feed</span>
+          <h2 class="text-2xl sm:text-3xl font-serif font-bold text-slate-900 mt-1">
+            Clinic Bulletins & Live Notifications
+          </h2>
+          <p class="text-slate-600 text-sm mt-1">
+            Real-time updates regarding Dr. Mansoor Ahmad Dar's OPD schedule, academic conferences, and clinic hours.
+          </p>
+        </div>
+        <div class="flex items-center gap-2 text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-xl shrink-0">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>Live Feed Updated Daily</span>
+        </div>
+      </div>
+
+      <!-- Notifications Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <!-- Bulletin 1 -->
+        <div class="bg-teal-50/70 border border-teal-200 rounded-2xl p-5 shadow-sm relative overflow-hidden">
+          <div class="flex items-center justify-between text-xs font-bold text-teal-800 mb-2">
+            <span class="flex items-center gap-1.5"><i class="ph-bold ph-hospital text-teal-600"></i> GMC Hospital Notice</span>
+            <span class="text-[11px] bg-teal-200/80 px-2 py-0.5 rounded text-teal-900">Regular Session</span>
+          </div>
+          <h4 class="font-bold text-slate-900 text-base mb-1.5">GMC Anantnag Psychiatry OPD Active</h4>
+          <p class="text-xs text-slate-600 leading-relaxed mb-3">
+            Patients can visit Associated Hospital GMC Anantnag OPD block between 10:00 AM and 04:00 PM on designated clinical days for comprehensive psychiatric checkup and subsidized hospital medicines.
+          </p>
+          <div class="text-[11px] font-semibold text-teal-700 flex items-center gap-1">
+            <i class="ph-bold ph-clock"></i> Mon – Sat: 10:00 AM – 04:00 PM
+          </div>
+        </div>
+
+        <!-- Bulletin 2 -->
+        <div class="bg-amber-50/70 border border-amber-200 rounded-2xl p-5 shadow-sm relative overflow-hidden">
+          <div class="flex items-center justify-between text-xs font-bold text-amber-900 mb-2">
+            <span class="flex items-center gap-1.5"><i class="ph-bold ph-storefront text-amber-700"></i> ExpectCare Clinic Update</span>
+            <span class="text-[11px] bg-amber-200 px-2 py-0.5 rounded text-amber-900">Evening OPD</span>
+          </div>
+          <h4 class="font-bold text-slate-900 text-base mb-1.5">Cheeni Chowk Evening Consultations</h4>
+          <p class="text-xs text-slate-600 leading-relaxed mb-3">
+            Private consultations at <strong>New Patigaru Medical Store, Cheeni Chowk, Malla Mohalla</strong> are held on <strong>Tuesday (3:00 PM - 10:30 PM), Thursday (4:30 PM - 10:30 PM), and Friday (4:30 PM - 10:00 PM)</strong>. Advance booking recommended.
+          </p>
+          <div class="text-[11px] font-semibold text-amber-800 flex items-center gap-1">
+            <i class="ph-bold ph-phone-call"></i> Call Desk: +91 9906927006
+          </div>
+        </div>
+
+        <!-- Bulletin 3 -->
+        <div class="bg-sky-50/70 border border-sky-200 rounded-2xl p-5 shadow-sm relative overflow-hidden">
+          <div class="flex items-center justify-between text-xs font-bold text-sky-900 mb-2">
+            <span class="flex items-center gap-1.5"><i class="ph-bold ph-lightbulb text-sky-700"></i> Psychiatry Advisory</span>
+            <span class="text-[11px] bg-sky-200 px-2 py-0.5 rounded text-sky-900">De-Stigmatize Care</span>
+          </div>
+          <h4 class="font-bold text-slate-900 text-base mb-1.5">Anxiety & Sleep Hygiene Advisory</h4>
+          <p class="text-xs text-slate-600 leading-relaxed mb-3">
+            Uncontrolled stress, nocturnal palpitations, and prolonged sleeplessness require timely psychiatric screening rather than self-medication with unverified sleeping pills. Consultation brings lasting resolution.
+          </p>
+          <div class="text-[11px] font-semibold text-sky-800 flex items-center gap-1">
+            <i class="ph-bold ph-shield-check"></i> Evidence-Based Medicine Protocol
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- TWO CLINICS COMPARISON & ADDRESS CARDS -->
+  <section id="clinics" class="py-16 bg-slate-50 border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center max-w-3xl mx-auto mb-12">
+        <span class="text-teal-700 font-bold text-xs uppercase tracking-wider">Practice Locations</span>
+        <h2 class="text-3xl font-serif font-bold text-slate-900 mt-1">
+          Choose From Two Convenient Clinics in Anantnag
+        </h2>
+        <p class="text-slate-600 text-sm mt-2">
+          Consult Prof. (Dr.) Mansoor Ahmad Dar either at his dedicated private evening practice or during hospital OPD hours at GMC Anantnag.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        <!-- CLINIC 1 CARD -->
+        <div class="bg-white rounded-3xl border-2 border-teal-600/40 p-7 sm:p-8 shadow-lg hover:shadow-xl transition-all relative flex flex-col justify-between">
+          <div class="absolute top-5 right-5 bg-teal-100 text-teal-800 text-xs font-extrabold px-3 py-1 rounded-full border border-teal-300">
+            Private Evening Practice
+          </div>
+
+          <div>
+            <div class="w-12 h-12 rounded-2xl bg-teal-700 text-white flex items-center justify-center text-2xl mb-5 shadow">
+              <i class="ph-bold ph-buildings"></i>
+            </div>
+            
+            <h3 class="text-2xl font-bold text-slate-900 mb-1">Clinic 1: ExpectCare Psychiatric Clinic</h3>
+            <p class="text-xs text-teal-700 font-semibold mb-4">Dedicated Evening Psychiatric OPD & Psychotherapy</p>
+
+            <div class="space-y-3.5 text-sm text-slate-600 mb-6">
+              <div class="flex items-start gap-3">
+                <i class="ph-fill ph-map-pin text-teal-700 text-lg mt-0.5 shrink-0"></i>
+                <div>
+                  <strong class="text-slate-800 block text-xs">Address:</strong>
+                  New Patigaru Medical Store, Cheeni Chowk, Malla Mohalla, Anantnag, Jammu & Kashmir – 192101
+                </div>
+              </div>
+
+              <div class="flex items-start gap-3">
+                <i class="ph-fill ph-clock text-teal-700 text-lg mt-0.5 shrink-0"></i>
+                <div>
+                  <strong class="text-slate-800 block text-xs">Schedule & Timings:</strong>
+                  <ul class="text-xs list-disc pl-4 space-y-1 text-slate-700 mt-1">
+                    <li><strong>Tuesday:</strong> 03:00 PM – 10:30 PM</li>
+                    <li><strong>Thursday:</strong> 04:30 PM – 10:30 PM</li>
+                    <li><strong>Friday:</strong> 04:30 PM – 10:00 PM</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-3">
+                <i class="ph-fill ph-phone text-teal-700 text-lg mt-0.5 shrink-0"></i>
+                <div>
+                  <strong class="text-slate-800 block text-xs">Direct Appointment Helpline:</strong>
+                  <a href="tel:+919906927006" class="font-bold text-teal-800 hover:underline">+91 9906927006</a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-4 border-t border-slate-100 flex items-center gap-3">
+            <button onclick="prefillBooking('Clinic 1: ExpectCare (Cheeni Chowk)')" class="flex-1 py-3 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs sm:text-sm text-center shadow transition-all">
+              Book at ExpectCare (Clinic 1)
+            </button>
+            <a href="tel:+919906927006" class="p-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-lg">
+              <i class="ph-bold ph-phone-call"></i>
+            </a>
+          </div>
+        </div>
+
+        <!-- CLINIC 2 CARD -->
+        <div class="bg-white rounded-3xl border border-slate-200 p-7 sm:p-8 shadow-sm hover:shadow-md transition-all relative flex flex-col justify-between">
+          <div class="absolute top-5 right-5 bg-slate-100 text-slate-800 text-xs font-extrabold px-3 py-1 rounded-full border border-slate-300">
+            Govt. Teaching Hospital
+          </div>
+
+          <div>
+            <div class="w-12 h-12 rounded-2xl bg-slate-800 text-white flex items-center justify-center text-2xl mb-5 shadow">
+              <i class="ph-bold ph-hospital"></i>
+            </div>
+            
+            <h3 class="text-2xl font-bold text-slate-900 mb-1">Clinic 2: GMC Anantnag Associated Hospital</h3>
+            <p class="text-xs text-slate-500 font-semibold mb-4">Department of Psychiatry, Academic OPD & Inpatient Unit</p>
+
+            <div class="space-y-3.5 text-sm text-slate-600 mb-6">
+              <div class="flex items-start gap-3">
+                <i class="ph-fill ph-map-pin text-slate-700 text-lg mt-0.5 shrink-0"></i>
+                <div>
+                  <strong class="text-slate-800 block text-xs">Location:</strong>
+                  OPD Block, Associated Hospital, Govt. Medical College (GMC) Anantnag, Janglat Mandi, Anantnag, J&K
+                </div>
+              </div>
+
+              <div class="flex items-start gap-3">
+                <i class="ph-fill ph-clock text-slate-700 text-lg mt-0.5 shrink-0"></i>
+                <div>
+                  <strong class="text-slate-800 block text-xs">Hospital Timings:</strong>
+                  <ul class="text-xs list-disc pl-4 space-y-1 text-slate-700 mt-1">
+                    <li><strong>Monday – Saturday:</strong> 10:00 AM – 04:00 PM</li>
+                    <li>Hospital OPD ticketing & verification required at counter</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-3">
+                <i class="ph-fill ph-info text-slate-700 text-lg mt-0.5 shrink-0"></i>
+                <div>
+                  <strong class="text-slate-800 block text-xs">Institutional Facility:</strong>
+                  De-Addiction Centre (ATF), Clinical Neuro-psychiatry, and Student Academic Rounds
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-4 border-t border-slate-100 flex items-center gap-3">
+            <button onclick="prefillBooking('Clinic 2: GMC Anantnag Associated Hospital')" class="flex-1 py-3 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs sm:text-sm text-center shadow transition-all">
+              Request Slot at GMC (Clinic 2)
+            </button>
+            <a href="tel:01932222123" class="p-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-lg">
+              <i class="ph-bold ph-hospital"></i>
+            </a>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ONLINE APPOINTMENT BOOKING ENGINE -->
+  <section id="book-appointment" class="py-20 bg-gradient-to-b from-teal-900 to-slate-900 text-white relative">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        
+        <!-- Booking Instructions -->
+        <div class="lg:col-span-5 space-y-6">
+          <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-800/90 text-teal-200 text-xs font-bold border border-teal-700">
+            <i class="ph-bold ph-calendar-check"></i> Direct Online Booking Desk
+          </span>
+
+          <h2 class="text-3xl sm:text-4xl font-serif font-bold leading-tight">
+            Apply For Online Consultation Or In-Clinic Visit
+          </h2>
+
+          <p class="text-teal-100/80 text-sm leading-relaxed">
+            Please choose between <strong>ExpectCare (Cheeni Chowk)</strong> for private evening sessions or <strong>GMC Anantnag OPD</strong>. Your request is queued immediately and confirmed via SMS/WhatsApp.
+          </p>
+
+          <!-- Instructions Card -->
+          <div class="bg-teal-950/70 p-5 rounded-2xl border border-teal-800 space-y-3 text-xs text-teal-200">
+            <div class="flex items-start gap-2.5">
+              <i class="ph-bold ph-check text-teal-400 text-base shrink-0 mt-0.5"></i>
+              <span>Strict medical confidentiality maintained under psychiatric code of ethics.</span>
+            </div>
+            <div class="flex items-start gap-2.5">
+              <i class="ph-bold ph-check text-teal-400 text-base shrink-0 mt-0.5"></i>
+              <span>For ExpectCare clinic, evening timings are strictly honored (Tue, Thu, Fri).</span>
+            </div>
+            <div class="flex items-start gap-2.5">
+              <i class="ph-bold ph-check text-teal-400 text-base shrink-0 mt-0.5"></i>
+              <span>Coordinator helpline available at <strong>+91 9906927006</strong>.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Appointment Form Card -->
+        <div class="lg:col-span-7">
+          <div class="bg-white text-slate-800 rounded-3xl p-6 sm:p-9 shadow-2xl">
+            
+            <form id="clinicBookingForm" onsubmit="processBooking(event)" class="space-y-4">
+              
+              <!-- STEP 1: SELECT CLINIC LOCATION -->
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                  1. Select Clinic / Facility *
+                </label>
+                <select id="selectedClinic" onchange="adjustSlots()" required class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-600 text-sm bg-slate-50 font-medium">
+                  <option value="" disabled selected>-- Choose Clinic --</option>
+                  <option value="Clinic 1: ExpectCare (Cheeni Chowk)">Clinic 1: ExpectCare Clinic, Cheeni Chowk Anantnag (Tue, Thu, Fri)</option>
+                  <option value="Clinic 2: GMC Anantnag Associated Hospital">Clinic 2: GMC Anantnag Associated Hospital OPD Block</option>
+                </select>
+              </div>
+
+              <!-- STEP 2: PATIENT NAME & PHONE -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Patient Full Name *</label>
+                  <input type="text" id="patientFullName" required placeholder="e.g., Suhail Ahmad" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-600 text-sm">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">WhatsApp / Contact Number *</label>
+                  <input type="tel" id="patientContact" required placeholder="+91 XXXXX XXXXX" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-600 text-sm">
+                </div>
+              </div>
+
+              <!-- STEP 3: CONCERN & DATE -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Clinical Concern *</label>
+                  <select id="clinicalConcern" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-600 text-sm bg-white">
+                    <option value="" disabled selected>Select Primary Symptom</option>
+                    <option value="Depression & Mood Disorder">Depression & Mood Disorder</option>
+                    <option value="Severe Anxiety & Panic Attacks">Severe Anxiety & Panic Attacks</option>
+                    <option value="Obsessive Compulsive Disorder (OCD)">Obsessive Compulsive Disorder (OCD)</option>
+                    <option value="Sleep Disorder / Severe Insomnia">Sleep Disorder / Severe Insomnia</option>
+                    <option value="Bipolar Affective Disorder">Bipolar Affective Disorder</option>
+                    <option value="Substance Use / De-Addiction Support">Substance Use / De-Addiction Support</option>
+                    <option value="General Psychiatric Evaluation">General Psychiatric Evaluation</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Preferred Date *</label>
+                  <input type="date" id="bookingDate" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-600 text-sm">
+                </div>
+              </div>
+
+              <!-- STEP 4: TIME SLOT (DYNAMIC BASED ON CLINIC) -->
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Time Window / Slot *</label>
+                <select id="slotTime" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-600 text-sm bg-white">
+                  <option value="" disabled selected>Please select a clinic first</option>
+                </select>
+                <p id="clinicSlotNote" class="text-[11px] text-teal-700 mt-1 italic"></p>
+              </div>
+
+              <!-- STEP 5: NOTES -->
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Brief Medical Notes / History (Optional)</label>
+                <textarea id="patientHistory" rows="2" placeholder="Mention previous medications or acute symptoms..." class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-600 text-sm"></textarea>
+              </div>
+
+              <!-- PRIVACY / COMMUNICATION CONSENT -->
+              <div class="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+                <label class="flex items-start gap-2.5 cursor-pointer">
+                  <input id="notificationConsent" type="checkbox" required class="mt-0.5 h-4 w-4 accent-teal-700 shrink-0">
+                  <span>I agree to be contacted by SMS and WhatsApp about this appointment request. I will not include emergency details or sensitive medical history in this form. My request is pending until clinic staff confirms it.</span>
+                </label>
+              </div>
+
+              <!-- SUBMIT BUTTON -->
+              <button id="submitBookingBtn" type="submit" class="w-full py-3.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2">
+                <i class="ph-bold ph-paper-plane-tilt text-lg"></i>
+                <span>Submit Appointment Request</span>
+              </button>
+
+              <div class="flex items-center justify-between text-xs text-slate-500 pt-2">
+                <span><i class="ph-bold ph-shield-check text-emerald-600"></i> Privacy-conscious appointment request</span>
+                <span class="text-teal-700 font-semibold">SMS + WhatsApp after approval</span>
+              </div>
+
+            </form>
+
+            <!-- SUCCESS CONFIRMATION MODAL CARD (AFTER SUBMIT) -->
+            <div id="bookingResultCard" class="hidden mt-6 p-6 rounded-2xl bg-teal-50 border border-teal-200 text-slate-800 text-center animate-fade-in space-y-3">
+              <div class="w-12 h-12 bg-emerald-600 text-white rounded-full flex items-center justify-center mx-auto text-2xl shadow">
+                <i class="ph-bold ph-check"></i>
+              </div>
+              <h4 class="font-bold text-lg text-teal-950">Appointment Request Submitted</h4>
+              <p class="text-xs text-slate-600" id="receiptSummaryText"></p>
+              
+              <div class="pt-3 flex flex-col sm:flex-row gap-2 justify-center">
+                <a id="whatsappConfirmBtn" href="#" target="_blank" class="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow">
+                  <i class="ph-bold ph-whatsapp-logo text-base"></i> Contact Clinic Desk on WhatsApp
+                </a>
+                <button onclick="resetBookingForm()" class="px-4 py-2 rounded-xl bg-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-300">
+                  New Booking
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ACADEMIC RESEARCH & PUBLICATIONS (40+ PAPERS) -->
+  <section id="research" class="py-16 bg-white border-t border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center max-w-3xl mx-auto mb-12">
+        <span class="text-teal-700 font-bold text-xs uppercase tracking-wider">Scientific Research & Publications</span>
+        <h2 class="text-3xl font-serif font-bold text-slate-900 mt-1">
+          Academic Contributions (40+ Indexed Studies)
+        </h2>
+        <p class="text-slate-600 text-sm mt-2">
+          Prof. (Dr.) Mansoor Ahmad Dar has actively published across international and national neuropsychiatric journals, advancing psychiatric epidemiology and clinical protocols.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        
+        <!-- Paper 1 -->
+        <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200 hover:border-teal-400 transition-colors">
+          <div class="text-[11px] font-bold text-teal-700 uppercase tracking-wider mb-1">Journal of Psychiatry Spectrum</div>
+          <h4 class="font-bold text-sm text-slate-900 mb-2">Platelet & Inflammatory Hematological Markers in Attempted Suicide</h4>
+          <p class="text-xs text-slate-600 leading-relaxed mb-3">
+            Investigation of biological hematological inflammatory indices (HIM) in emergency psychiatric admissions, offering clinical biomarkers for acute crisis management.
+          </p>
+          <span class="text-[11px] text-slate-500 font-medium">Authors: Dr. Mansoor Ahmad Dar, et al.</span>
+        </div>
+
+        <!-- Paper 2 -->
+        <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200 hover:border-teal-400 transition-colors">
+          <div class="text-[11px] font-bold text-teal-700 uppercase tracking-wider mb-1">Indian Journal of Mental Health & Neurosciences</div>
+          <h4 class="font-bold text-sm text-slate-900 mb-2">Patterns of Psychiatric Morbidity at GMC Anantnag OPD</h4>
+          <p class="text-xs text-slate-600 leading-relaxed mb-3">
+            A comprehensive epidemiological analysis of major psychiatric presentations, stress-related disorders, and demographic distributions in South Kashmir.
+          </p>
+          <span class="text-[11px] text-slate-500 font-medium">Authors: Dr. Mansoor Ahmad Dar, Rehana Amin, et al.</span>
+        </div>
+
+        <!-- Paper 3 -->
+        <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200 hover:border-teal-400 transition-colors">
+          <div class="text-[11px] font-bold text-teal-700 uppercase tracking-wider mb-1">Clinical Case Reports in Psychiatry</div>
+          <h4 class="font-bold text-sm text-slate-900 mb-2">Obsessive Compulsive Disorder Presenting as Neurological Emergency</h4>
+          <p class="text-xs text-slate-600 leading-relaxed mb-3">
+            Analysis of atypical acute OCD presentations masquerading as neurological emergencies and their rapid therapeutic stabilization protocols.
+          </p>
+          <span class="text-[11px] text-slate-500 font-medium">Authors: Dr. Mansoor Ahmad Dar, Rayees Ahmad Wani, et al.</span>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- PSYCHIATRIC CLINICAL SERVICES -->
+  <section id="services" class="py-16 bg-slate-50 border-t border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center max-w-2xl mx-auto mb-12">
+        <span class="text-teal-700 font-bold text-xs uppercase tracking-wider">Clinical Care Domains</span>
+        <h2 class="text-3xl font-serif font-bold text-slate-900 mt-1">
+          Specialized Psychiatric Treatments
+        </h2>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center text-xl mb-4">
+            <i class="ph-bold ph-sun-dim"></i>
+          </div>
+          <h4 class="font-bold text-slate-900 text-base mb-1.5">Clinical Depression</h4>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Targeted antidepressant optimization, cognitive restructuring, and restoration of energy and mood resilience.
+          </p>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center text-xl mb-4">
+            <i class="ph-bold ph-arrows-clockwise"></i>
+          </div>
+          <h4 class="font-bold text-slate-900 text-base mb-1.5">OCD & Anxiety Disorders</h4>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Treatment for intrusive thoughts, repetitive rituals, panic attacks, and somatic tension headaches.
+          </p>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center text-xl mb-4">
+            <i class="ph-bold ph-scales"></i>
+          </div>
+          <h4 class="font-bold text-slate-900 text-base mb-1.5">Bipolar & Mood Cycles</h4>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Mood stabilizer titration, relapse-prevention plans, and emotional regulation guidance for individuals and caregivers.
+          </p>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center text-xl mb-4">
+            <i class="ph-bold ph-first-aid"></i>
+          </div>
+          <h4 class="font-bold text-slate-900 text-base mb-1.5">De-Addiction & Rehab</h4>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Medical opioid de-addiction, harm-reduction therapies, and motivational interviewing for sustained recovery.
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="bg-slate-950 text-slate-400 py-12 border-t border-slate-800 text-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8 pb-8 border-b border-slate-800">
+        <div>
+          <span class="text-white text-base font-bold block mb-2">Prof. (Dr.) Mansoor Ahmad Dar</span>
+          <p class="leading-relaxed text-slate-400">
+            Professor & Head, Department of Psychiatry, Government Medical College (GMC) Anantnag.<br>
+            Senior Consultant Psychiatrist at ExpectCare, Cheeni Chowk Anantnag.
+          </p>
+        </div>
+
+        <div>
+          <span class="text-white text-sm font-bold block mb-2">Clinic Contacts</span>
+          <p class="space-y-1">
+            <span><strong>ExpectCare Desk:</strong> +91 9906927006</span><br>
+            <span><strong>Hospital:</strong> Associated Hospital GMC Anantnag</span><br>
+            <span><strong>Location:</strong> Anantnag, Jammu & Kashmir – 192101</span>
+          </p>
+        </div>
+
+        <div>
+          <span class="text-white text-sm font-bold block mb-2">Emergency Helplines</span>
+          <p class="space-y-1">
+            <span>Tele-MANAS Toll Free: <strong class="text-teal-400">14416</strong></span><br>
+            <span>National Mental Health: <strong class="text-teal-400">1800-891-4416</strong></span><br>
+            <span>Medical Emergency: <strong class="text-teal-400">112</strong></span>
+          </p>
+        </div>
+      </div>
+
+      <div class="pt-6 flex flex-col sm:flex-row items-center justify-between text-slate-500 text-[11px] gap-2">
+        <p>&copy; 2026 Prof. (Dr.) Mansoor Ahmad Dar • Department of Psychiatry, GMC Anantnag. All clinical rights reserved.</p>
+        <p>Private & Institutional Mental Healthcare Platform</p>
+      </div>
+
+    </div>
+  </footer>
+
+  <!-- FLOATING WHATSAPP CTA -->
+  <a href="https://wa.me/919906927006?text=Assalam%20o%20Alaikum,%20I%20would%20like%20to%20inquire%20about%20an%20appointment%20with%20Prof.%20Dr.%20Mansoor%20Ahmad%20Dar." 
+     target="_blank" 
+     rel="noopener" 
+     class="fixed bottom-6 right-6 z-50 bg-emerald-600 hover:bg-emerald-700 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 transition-all group"
+     aria-label="Direct WhatsApp Contact">
+    <i class="ph-bold ph-whatsapp-logo text-3xl"></i>
+    <span class="absolute right-16 bg-slate-900 text-white text-xs font-bold px-3 py-1.5 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-lg">
+      Chat with Clinic Desk (+91 9906927006)
+    </span>
+  </a>
+
+  <!-- Supabase client + public configuration (never put service-role keys in the browser) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./config.js"></script>
+
+  <!-- SCRIPT FOR CLINIC TIMINGS & BOOKING LOGIC -->
+  <script>
+    // Set Minimum date as today
+    const dateField = document.getElementById('bookingDate');
+    if (dateField) {
+      dateField.min = new Date().toLocaleDateString('en-CA');
+    }
+
+    // Mobile nav toggle
+    const mobileBtn = document.getElementById('mobileMenuBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+    const menuToggleIcon = document.getElementById('menuToggleIcon');
+
+    if (mobileBtn) {
+      mobileBtn.addEventListener('click', () => {
+        const isClosed = mobileMenu.classList.contains('hidden');
+        if (isClosed) {
+          mobileMenu.classList.remove('hidden');
+          menuToggleIcon.classList.replace('ph-list', 'ph-x');
+        } else {
+          mobileMenu.classList.add('hidden');
+          menuToggleIcon.classList.replace('ph-x', 'ph-list');
+        }
+      });
+    }
+
+    document.querySelectorAll('.mobile-nav-link').forEach(link => {
+      link.addEventListener('click', () => {
+        mobileMenu.classList.add('hidden');
+        menuToggleIcon.classList.replace('ph-x', 'ph-list');
+      });
+    });
+
+    // Preset selection helper
+    function prefillBooking(clinicName) {
+      const select = document.getElementById('selectedClinic');
+      select.value = clinicName;
+      adjustSlots();
+      // Smooth scroll to form
+      document.getElementById('book-appointment').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Dynamically adjust slots based on clinic selection
+    function adjustSlots() {
+      const clinic = document.getElementById('selectedClinic').value;
+      const slotSelect = document.getElementById('slotTime');
+      const note = document.getElementById('clinicSlotNote');
+      slotSelect.innerHTML = '';
+
+      if (clinic.includes('ExpectCare')) {
+        // Clinic 1: Cheeni Chowk evening hours (Tue, Thu, Fri)
+        slotSelect.innerHTML = `
+          <option value="" disabled selected>-- Select Evening Slot (Clinic 1) --</option>
+          <option value="Tuesday Evening (03:30 PM - 06:30 PM)">Tuesday Evening (03:30 PM - 06:30 PM)</option>
+          <option value="Tuesday Night (07:00 PM - 10:00 PM)">Tuesday Night (07:00 PM - 10:00 PM)</option>
+          <option value="Thursday Evening (04:30 PM - 07:30 PM)">Thursday Evening (04:30 PM - 07:30 PM)</option>
+          <option value="Thursday Night (08:00 PM - 10:30 PM)">Thursday Night (08:00 PM - 10:30 PM)</option>
+          <option value="Friday Evening (04:30 PM - 07:30 PM)">Friday Evening (04:30 PM - 07:30 PM)</option>
+          <option value="Friday Night (08:00 PM - 10:00 PM)">Friday Night (08:00 PM - 10:00 PM)</option>
+        `;
+        note.innerText = "ExpectCare Clinic at Cheeni Chowk runs evening sessions on Tue, Thu, and Fri.";
+      } else if (clinic.includes('GMC Anantnag')) {
+        // Clinic 2: Hospital morning OPD hours
+        slotSelect.innerHTML = `
+          <option value="" disabled selected>-- Select Hospital OPD Window (Clinic 2) --</option>
+          <option value="Morning OPD (10:00 AM - 01:00 PM)">Morning OPD (10:00 AM - 01:00 PM)</option>
+          <option value="Afternoon OPD (01:30 PM - 04:00 PM)">Afternoon OPD (01:30 PM - 04:00 PM)</option>
+        `;
+        note.innerText = "Associated Hospital GMC Anantnag OPD runs Monday through Saturday mornings.";
+      }
+    }
+
+    // Supabase browser client. config.js contains only the public URL + anon key.
+    const supabaseReady = !!(window.supabase && window.SUPABASE_CONFIG &&
+      window.SUPABASE_CONFIG.url && window.SUPABASE_CONFIG.anonKey &&
+      !window.SUPABASE_CONFIG.url.includes('YOUR_PROJECT') &&
+      !window.SUPABASE_CONFIG.anonKey.includes('YOUR_SUPABASE'));
+    const supabaseClient = supabaseReady
+      ? window.supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.anonKey)
+      : null;
+
+    // Escape user-provided values before placing them into the status card.
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, ch => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[ch]));
+    }
+
+    // Save the appointment request in Supabase. It remains pending until staff approval.
+    async function processBooking(event) {
+      event.preventDefault();
+      const submitBtn = document.getElementById('submitBookingBtn');
+      if (!supabaseClient) {
+        alert('Online booking is not configured yet. Please contact the clinic desk on +91 9906927006.');
+        return;
+      }
+
+      const clinic = document.getElementById('selectedClinic').value;
+      const name = document.getElementById('patientFullName').value.trim();
+      const phone = document.getElementById('patientContact').value.trim();
+      const concern = document.getElementById('clinicalConcern').value;
+      const date = document.getElementById('bookingDate').value;
+      const slot = document.getElementById('slotTime').value;
+      const consent = document.getElementById('notificationConsent').checked;
+
+      if (!consent) {
+        alert('Please consent to appointment-related SMS and WhatsApp messages.');
+        return;
+      }
+      if (name.length < 2 || name.length > 100) {
+        alert('Please enter a valid name (2–100 characters).');
+        return;
+      }
+      if (phone.replace(/\D/g, '').length < 10 || phone.length > 25) {
+        alert('Please enter a valid contact number.');
+        return;
+      }
+      if (!date || date < new Date().toLocaleDateString('en-CA')) {
+        alert('Please select today or a future date.');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.classList.add('opacity-60', 'cursor-not-allowed');
+      submitBtn.querySelector('span').textContent = 'Submitting request…';
+      try {
+        const { data, error } = await supabaseClient
+          .from('appointments')
+          .insert({
+            patient_name: name,
+            phone: phone,
+            clinic: clinic,
+            concern: concern,
+            appointment_date: date,
+            slot: slot,
+            communication_consent: true,
+            status: 'pending'
+          });
+
+        if (error) throw error;
+
+        const resultCard = document.getElementById('bookingResultCard');
+        const summaryText = document.getElementById('receiptSummaryText');
+        const whatsappBtn = document.getElementById('whatsappConfirmBtn');
+        summaryText.innerHTML = `
+          <strong>Request status:</strong> Submitted<br>
+          <strong>Clinic:</strong> ${escapeHtml(clinic)}<br>
+          <strong>Requested date:</strong> ${escapeHtml(date)}<br>
+          <strong>Preferred slot:</strong> ${escapeHtml(slot)}<br><br>
+          <strong>Status: Pending clinic approval.</strong> This is a request, not a confirmed appointment. The clinic will contact you after reviewing it.
+        `;
+        const waMsg = encodeURIComponent('Assalam o Alaikum, I have submitted an appointment request. Please let me know when it has been reviewed.');
+        whatsappBtn.href = `https://wa.me/919906927006?text=${waMsg}`;
+        resultCard.classList.remove('hidden');
+        resultCard.scrollIntoView({ behavior: 'smooth' });
+        document.getElementById('clinicBookingForm').reset();
+        document.getElementById('slotTime').innerHTML = '<option value="" disabled selected>Please select a clinic first</option>';
+        document.getElementById('clinicSlotNote').innerText = '';
+      } catch (err) {
+        console.error('Appointment save failed:', err);
+        alert('Your request could not be saved. Please try again or contact the clinic desk at +91 9906927006.');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+        submitBtn.querySelector('span').textContent = 'Submit Appointment Request';
+      }
+    }
+
+    function resetBookingForm() {
+      document.getElementById('clinicBookingForm').reset();
+      document.getElementById('bookingResultCard').classList.add('hidden');
+    }
+  </script>
+</body>
+</html>
