@@ -106,6 +106,10 @@ begin
    full_name=excluded.full_name,patient_code=excluded.patient_code,
    access_code_hash=excluded.access_code_hash,portal_access_enabled=true,
    portal_access_updated_at=now(),updated_at=now();
+
+  update public.appointments
+  set portal_access_enabled=true
+  where id=new.id;
  end if;
  return new;
 end;
