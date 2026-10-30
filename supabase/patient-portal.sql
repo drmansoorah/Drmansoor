@@ -32,11 +32,28 @@ begin
  else
    perform setval('public.patient_portal_id_seq',1,false);
  end if;
-end $$;
+end $;
+
+-- Central ID generator: DRMAD001 ... DRMAD999, then DRMAD1000 and onward.
+create or replace function public.generate_patient_portal_id()
+returns text
+language plpgsql
+volatile
+security definer
+set search_path = public, pg_temp
+as $
+declare v_id bigint;
+begin
+ v_id:=nextval('public.patient_portal_id_seq');
+ return 'DRMAD' || case when v_id<1000 then lpad(v_id::text,3,'0') else v_id::text end;
+end;
+$;
+revoke all on function public.generate_patient_portal_id() from public;
+grant execute on function public.generate_patient_portal_id() to authenticated;
 
 -- Migrate existing PT-... IDs to the new DRMAD### format.
 with ids as (
- select id, 'DRMAD' || lpad(nextval('public.patient_portal_id_seq')::text,3,'0') as new_code
+ select id, public.generate_patient_portal_id() as new_code
  from public.patients
  where patient_code is null or patient_code !~ '^DRMAD[0-9]+$'
 )
@@ -44,7 +61,7 @@ update public.patients p set patient_code=ids.new_code
 from ids where p.id=ids.id;
 
 with ids as (
- select id, 'DRMAD' || lpad(nextval('public.patient_portal_id_seq')::text,3,'0') as new_code
+ select id, public.generate_patient_portal_id() as new_code
  from public.appointments
  where patient_code is null or patient_code !~ '^DRMAD[0-9]+$'
 )
@@ -53,7 +70,7 @@ from ids where a.id=ids.id;
 
 -- Walk-in patients added from Doctor Dashboard use the same DRMAD sequence.
 alter table public.patients alter column patient_code
-set default ('DRMAD' || lpad(nextval('public.patient_portal_id_seq')::text,3,'0'));
+set default public.generate_patient_portal_id();
 
 create unique index if not exists patients_patient_code_unique on public.patients(patient_code);
 create unique index if not exists appointments_patient_code_unique
@@ -113,7 +130,7 @@ begin
  for v_i in 0..6 loop
   v_access_code:=v_access_code||substr(v_alphabet,(get_byte(v_random,v_i)%length(v_alphabet))+1,1);
  end loop;
- v_patient_code:='DRMAD'||lpad(nextval('public.patient_portal_id_seq')::text,3,'0');
+ v_patient_code:=public.generate_patient_portal_id();
  v_hash:=crypt(v_access_code,gen_salt('bf'));
 
  insert into public.appointments(
