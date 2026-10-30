@@ -7,7 +7,7 @@
 <script src="./config.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
+<script src="./prescription-pdf.js"></script>
 <style>
 :root{color-scheme:light}body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 .app-bg{background:#f4f7fb}.panel{background:#fff;border:1px solid #e5eaf1;border-radius:18px;box-shadow:0 5px 22px rgba(15,35,60,.045)}
@@ -252,44 +252,20 @@
  let latestSaved=null;
  function downloadPrescription(r){
   if(!r)return;
-  if(!window.jspdf||!window.jspdf.jsPDF){window.print();return}
-  const jsPDF=window.jspdf.jsPDF;const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-  const teal=[15,118,110],dark=[15,23,42],muted=[90,105,120];
-  const name=r.patient_name||patientIdentityFromForm().full_name||'Patient';
-  const phone=r.patient_phone||patientIdentityFromForm().phone||'';
-  const medData=Array.isArray(r.medication_items)?r.medication_items:[];
-  const fallback=String(r.medicines||'').split('\n').filter(Boolean).map(function(line){return {name:line,strength:'',dose:'',frequency:'',duration:''}});
-  const meds=medData.length?medData:fallback;
-  doc.setFillColor(7,74,69);doc.rect(0,0,210,43,'F');
-  doc.setFillColor(255,255,255);doc.circle(22,20,9,'F');doc.setTextColor(7,74,69);doc.setFont('helvetica','bold');doc.setFontSize(11);doc.text('MA',22,23,{align:'center'});
-  doc.setTextColor(255,255,255);doc.setFontSize(15);doc.text('PROF. (DR.) MANSOOR AHMAD',38,15);
-  doc.setFontSize(9);doc.setFont('helvetica','normal');doc.text('MBBS, MD Psychiatry | Professor & Head, Department of Psychiatry',38,22);
-  doc.text('Government Medical College (GMC), Anantnag',38,28);doc.text('ExpectCare Clinic, Cheeni Chowk, Anantnag | +91 9906927006',38,34);
-  doc.setTextColor(dark);doc.setFont('helvetica','bold');doc.setFontSize(16);doc.text('MEDICAL PRESCRIPTION',15,54);
-  doc.setDrawColor(13,148,136);doc.setLineWidth(.7);doc.line(15,57,195,57);
-  doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(muted);doc.text('Prescription date: '+new Date(r.created_at||Date.now()).toLocaleDateString(),15,64);
-  doc.text('Prescription ID: '+String(r.id||'').slice(0,8).toUpperCase(),195,64,{align:'right'});
-  doc.setFillColor(241,248,247);doc.roundedRect(15,70,180,27,3,3,'F');
-  doc.setTextColor(dark);doc.setFont('helvetica','bold');doc.setFontSize(10);doc.text('PATIENT DETAILS',20,77);
-  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.text('Name: '+name,20,84);doc.text('Mobile: '+phone,110,84);
-  doc.text('Age: '+(r.patient_age||'—')+'    Gender: '+(r.patient_gender||'—'),20,91);
-  doc.text('Allergies: '+(r.patient_allergies||'Not recorded'),110,91);
-  let y=106;
-  doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(dark);doc.text('CHIEF COMPLAINTS',15,y);y+=6;
-  doc.setFont('helvetica','normal');doc.setFontSize(9);const comp=doc.splitTextToSize(r.complaints||'Not recorded',178);doc.text(comp,15,y);y+=Math.max(7,comp.length*4.5)+3;
-  doc.setFont('helvetica','bold');doc.setFontSize(10);doc.text('DIAGNOSIS / CLINICAL IMPRESSION',15,y);y+=6;
-  doc.setFont('helvetica','normal');doc.setFontSize(9);const diag=doc.splitTextToSize(r.diagnosis||'—',178);doc.text(diag,15,y);y+=Math.max(8,diag.length*4.5)+2;
-  if(typeof doc.autoTable!=='function'){window.print();return}
-  doc.autoTable({startY:y,head:[['MEDICINE','STRENGTH','DOSE','FREQUENCY','DURATION / INSTRUCTIONS']],body:meds.map(function(m){return [m.name||'',m.strength||'',m.dose||'',m.frequency||'',m.duration||'']}),theme:'grid',styles:{fontSize:8,cellPadding:2.8,overflow:'linebreak'},headStyles:{fillColor:teal,textColor:255,fontStyle:'bold'},margin:{left:15,right:15}});
-  y=doc.lastAutoTable.finalY+9;
-  if(r.vitals&&Object.keys(r.vitals).length){doc.setFont('helvetica','bold');doc.setFontSize(9);doc.text('VITALS: '+Object.keys(r.vitals).map(function(k){return k+': '+r.vitals[k]}).join('   |   '),15,y);y+=8}
-  if(r.advice){doc.setFont('helvetica','bold');doc.setFontSize(10);doc.text('ADVICE / INSTRUCTIONS',15,y);y+=5;doc.setFont('helvetica','normal');doc.setFontSize(9);const adv=doc.splitTextToSize(r.advice,178);doc.text(adv,15,y);y+=adv.length*4.5+5}
-  if(r.follow_up_date){doc.setFont('helvetica','bold');doc.setFontSize(9);doc.text('FOLLOW-UP: '+new Date(r.follow_up_date+'T00:00:00').toLocaleDateString(),15,y);y+=8}
-  const pageH=doc.internal.pageSize.getHeight();if(y>pageH-35){doc.addPage();y=25}
-  doc.setDrawColor(160,174,192);doc.line(132,y+13,193,y+13);doc.setFont('helvetica','bold');doc.setFontSize(9);doc.text('Prof. (Dr.) Mansoor Ahmad',193,y+19,{align:'right'});doc.setFont('helvetica','normal');doc.setFontSize(8);doc.text('MBBS, MD Psychiatry',193,y+24,{align:'right'});
-  doc.setFontSize(7);doc.setTextColor(120,130,140);doc.text('This document contains confidential patient health information. Keep it secure.',105,287,{align:'center'});
-  const fileName='Prescription_'+name.replace(/[^a-z0-9]+/gi,'_')+'_'+String(r.created_at||Date.now()).slice(0,10)+'.pdf';
-  doc.save(fileName);
+  const matched=patients.find(function(p){return p.id===r.patient_id})||{};
+  const active=selectedPatient&&selectedPatient.id===r.patient_id?selectedPatient:{};
+  const details={
+   full_name:r.patient_name||matched.full_name||active.full_name||'Patient',
+   patient_code:matched.patient_code||active.patient_code||'',
+   phone:r.patient_phone||matched.phone||active.phone||'',
+   age:r.patient_age||matched.age||active.age||'',
+   gender:r.patient_gender||matched.gender||active.gender||'',
+   allergies:r.patient_allergies||matched.allergies||active.allergies||''
+  };
+  try{
+   if(typeof window.generateClinicPrescriptionPdf!=='function')throw new Error('Prescription PDF tool did not load. Please refresh and try again.');
+   window.generateClinicPrescriptionPdf(r,details);
+  }catch(err){msg('globalError','Prescription PDF download failed: '+(err.message||'Please try again.'),true)}
  }
  async function enter(s){
   session=s;
