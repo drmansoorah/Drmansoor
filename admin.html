@@ -62,7 +62,7 @@
   async function loadAppointments() {
     if (!client) { showError('Supabase is not configured. Edit config.js first.'); return; }
     showError('');
-    const {data, error} = await client.from('appointments').select('id,patient_name,phone,clinic,concern,appointment_date,slot,status,created_at,decision_at,notification_status').order('created_at', {ascending:false}).limit(500);
+    const {data, error} = await client.from('appointments').select('id,patient_name,phone,clinic,concern,appointment_date,slot,status,patient_code,created_at,decision_at,notification_status').order('created_at', {ascending:false}).limit(500);
     if (error) { showError('Could not load appointments: ' + error.message); return; }
     appointments = data || [];
     $('pendingCount').textContent = appointments.filter(x=>x.status==='pending').length;
@@ -73,7 +73,7 @@
   function renderRows() {
     const q = $('searchInput').value.toLowerCase().trim(), status = $('statusFilter').value;
     const rows = appointments.filter(a => (status==='all'||a.status===status) && [a.patient_name,a.phone,a.clinic,a.concern].some(v=>String(v||'').toLowerCase().includes(q)));
-    $('appointmentsBody').innerHTML = rows.length ? rows.map(a => `<tr class="border-t border-slate-100 align-top"><td class="p-3"><div class="font-bold">${safe(a.patient_name)}</div><a class="text-teal-700 hover:underline" href="tel:${safe(a.phone)}">${safe(a.phone)}</a><div class="text-xs text-slate-400 mt-1">${safe(new Date(a.created_at).toLocaleString())}</div></td><td class="p-3"><div class="font-medium">${safe(a.clinic)}</div><div class="text-xs text-slate-500 mt-1">${safe(a.concern)}</div></td><td class="p-3"><div>${safe(a.appointment_date)}</div><div class="text-xs text-slate-500 mt-1">${safe(a.slot)}</div></td><td class="p-3"><span class="inline-block rounded-full px-2 py-1 text-xs font-bold ${a.status==='approved'?'bg-emerald-100 text-emerald-800':a.status==='rejected'?'bg-rose-100 text-rose-800':'bg-amber-100 text-amber-800'}">${safe(a.status)}</span><div class="text-xs text-slate-500 mt-1">${a.notification_status ? 'SMS: '+safe(a.notification_status.sms||'not sent')+' • WA: '+safe(a.notification_status.whatsapp||'not sent') : ''}</div></td><td class="p-3"><div class="flex flex-col gap-2 min-w-24">${a.status==='pending'?`<button data-id="${safe(a.id)}" data-action="approve" class="decision rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 text-xs font-bold">Approve + notify</button><button data-id="${safe(a.id)}" data-action="reject" class="decision rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-800 px-3 py-2 text-xs font-bold">Reject</button>`:'<span class="text-xs text-slate-400">No action</span>'}</div></td></tr>`).join('') : '<tr><td colspan="5" class="p-6 text-center text-slate-500">No appointments found.</td></tr>';
+    $('appointmentsBody').innerHTML = rows.length ? rows.map(a => `<tr class="border-t border-slate-100 align-top"><td class="p-3"><div class="font-bold">${safe(a.patient_name)}</div><a class="text-teal-700 hover:underline" href="tel:${safe(a.phone)}">${safe(a.phone)}</a><div class="text-xs text-slate-500 mt-1">Patient ID: <span class="font-mono font-semibold">${safe(a.patient_code||'Not assigned')}</span></div>${a.patient_code?'<button data-code="'+safe(a.patient_code)+'" class="credentials mt-2 text-xs font-bold text-teal-700 hover:underline">View permanent access code</button>':''}<div class="text-xs text-slate-400 mt-1">${safe(new Date(a.created_at).toLocaleString())}</div></td><td class="p-3"><div class="font-medium">${safe(a.clinic)}</div><div class="text-xs text-slate-500 mt-1">${safe(a.concern)}</div></td><td class="p-3"><div>${safe(a.appointment_date)}</div><div class="text-xs text-slate-500 mt-1">${safe(a.slot)}</div></td><td class="p-3"><span class="inline-block rounded-full px-2 py-1 text-xs font-bold ${a.status==='approved'?'bg-emerald-100 text-emerald-800':a.status==='rejected'?'bg-rose-100 text-rose-800':'bg-amber-100 text-amber-800'}">${safe(a.status)}</span><div class="text-xs text-slate-500 mt-1">${a.notification_status ? 'SMS: '+safe(a.notification_status.sms||'not sent')+' • WA: '+safe(a.notification_status.whatsapp||'not sent') : ''}</div></td><td class="p-3"><div class="flex flex-col gap-2 min-w-24">${a.status==='pending'?`<button data-id="${safe(a.id)}" data-action="approve" class="decision rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 text-xs font-bold">Approve + notify</button><button data-id="${safe(a.id)}" data-action="reject" class="decision rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-800 px-3 py-2 text-xs font-bold">Reject</button>`:'<span class="text-xs text-slate-400">No action</span>'}</div></td></tr>`).join('') : '<tr><td colspan="5" class="p-6 text-center text-slate-500">No appointments found.</td></tr>';
   }
   async function decide(id, action, button) {
     if (!client) return;
@@ -93,7 +93,21 @@
     } catch(e) { showError(e.message || 'Could not update appointment.'); button.disabled=false; button.textContent=action==='approve'?'Approve + notify':'Reject'; }
   }
   $('loginForm').addEventListener('submit', async e => { e.preventDefault(); $('loginError').textContent=''; if(!client){$('loginError').textContent='Supabase is not configured. Edit config.js first.';return;} const {data,error}=await client.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value}); if(error){$('loginError').textContent=error.message;return;} await ensureAdmin(data.session); });
-  $('appointmentsBody').addEventListener('click', e=>{const b=e.target.closest('button.decision');if(b) decide(b.dataset.id,b.dataset.action,b);});
+  $('appointmentsBody').addEventListener('click', async e=>{
+    const codeButton=e.target.closest('button.credentials');
+    if(codeButton){
+      codeButton.disabled=true;codeButton.textContent='Loading…';
+      try{
+        const {data,error}=await client.rpc('staff_get_patient_portal_credentials',{p_patient_code:codeButton.dataset.code});
+        if(error)throw error;
+        if(!data)throw new Error('No credential details were returned.');
+        alert('Patient: '+(data.patient_name||'Patient')+'\\nPatient ID: '+(data.patient_code||codeButton.dataset.code)+'\\nMindCare Access Code: '+(data.access_code||'Not retrievable')+(data.message?'\\n'+data.message:''));
+      }catch(err){showError(err.message||'Could not load patient credentials.')}
+      finally{codeButton.disabled=false;codeButton.textContent='View permanent access code'}
+      return;
+    }
+    const b=e.target.closest('button.decision');if(b) decide(b.dataset.id,b.dataset.action,b);
+  });
   $('refreshBtn').addEventListener('click',loadAppointments); $('searchInput').addEventListener('input',renderRows); $('statusFilter').addEventListener('change',renderRows);
   $('logoutBtn').addEventListener('click',async()=>{await client.auth.signOut();$('dashboardPanel').classList.add('hidden');$('loginPanel').classList.remove('hidden');$('appointmentsBody').innerHTML='';});
   if (!configured) $('loginError').textContent='Setup required: edit config.js with your Supabase project URL and anon key.';
