@@ -2,49 +2,294 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Doctor Portal | Dr Mansoor</title>
+<title>Doctor Workspace | Prof. (Dr.) Mansoor Ahmad</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
+<style>
+:root{color-scheme:light}body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.app-bg{background:#f4f7fb}.panel{background:#fff;border:1px solid #e5eaf1;border-radius:18px;box-shadow:0 5px 22px rgba(15,35,60,.045)}
+.field{width:100%;border:1px solid #dbe3ed;border-radius:10px;padding:10px 12px;font-size:13px;background:#fff;outline:none}
+.field:focus{border-color:#0d9488;box-shadow:0 0 0 3px rgba(13,148,136,.10)}
+.field-label{display:block;font-size:11px;font-weight:700;color:#64748b;margin-bottom:6px;text-transform:uppercase;letter-spacing:.055em}
+.btn-primary{background:#0f766e;color:white;border-radius:10px;padding:10px 15px;font-size:13px;font-weight:700}
+.btn-primary:hover{background:#115e59}.btn-primary:disabled{opacity:.45;cursor:not-allowed}
+.btn-soft{background:#ecfdf5;color:#0f766e;border:1px solid #ccefe4;border-radius:10px;padding:9px 12px;font-size:12px;font-weight:700}
+.patient-hit{width:100%;text-align:left;border:1px solid #e6edf3;border-radius:12px;padding:11px;background:#fff}
+.patient-hit:hover,.patient-hit.active{border-color:#0d9488;background:#f0fdfa}
+.med-row{display:grid;grid-template-columns:1.35fr 1fr 1fr 1fr 1.25fr 32px;gap:7px;align-items:center;margin-bottom:8px}
+.med-row input{min-width:0}
+@media(max-width:760px){.med-row{grid-template-columns:1fr 1fr;gap:8px;border:1px solid #e2e8f0;border-radius:12px;padding:10px}.med-row .med-name{grid-column:1/-1}.med-row .med-instruction{grid-column:1/-1}.med-row .remove-med{grid-column:1/-1;justify-self:end}}
+.badge{font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:5px 8px;border-radius:999px}
+</style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen">
-<header class="bg-white border-b"><div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center"><div><p class="text-xs uppercase tracking-widest text-teal-700 font-bold">Dr Mansoor • Clinic</p><h1 class="text-2xl font-bold">Doctor Portal</h1></div><button id="logout" class="hidden border rounded-lg px-4 py-2 text-sm">Sign out</button></div></header>
-<main class="max-w-6xl mx-auto p-4 sm:p-6">
-<section id="loginPanel" class="max-w-md mx-auto mt-10 bg-white rounded-2xl shadow-sm border p-6"><h2 class="text-xl font-bold mb-1">Doctor sign in</h2><p class="text-sm text-slate-500 mb-5">Sign in using your authorized doctor account.</p><form id="loginForm" class="space-y-3"><input id="email" type="email" required autocomplete="username" placeholder="Doctor email" class="w-full border rounded-lg p-3"><input id="password" type="password" required autocomplete="current-password" placeholder="Password" class="w-full border rounded-lg p-3"><button class="w-full bg-teal-700 text-white rounded-lg p-3 font-semibold">Sign in</button></form><p id="loginError" class="text-sm text-rose-600 mt-3"></p></section>
-<section id="dashboard" class="hidden space-y-5">
-<div class="grid sm:grid-cols-3 gap-3"><div class="bg-white border rounded-xl p-4"><p class="text-sm text-slate-500">Approved appointments</p><p id="totalCount" class="text-2xl font-bold">0</p></div><div class="bg-white border rounded-xl p-4"><p class="text-sm text-slate-500">Patients loaded</p><p id="patientCount" class="text-2xl font-bold">0</p></div><div class="bg-white border rounded-xl p-4"><p class="text-sm text-slate-500">Portal access</p><p class="font-semibold text-teal-700">Doctor account</p></div></div>
-<div class="grid lg:grid-cols-2 gap-5">
-<section class="bg-white border rounded-xl p-4"><div class="flex justify-between items-center mb-3"><h2 class="font-bold text-lg">Approved appointments</h2><button id="refresh" class="text-sm text-teal-700">Refresh</button></div><input id="search" placeholder="Search patient, phone or clinic" class="w-full border rounded-lg p-2 mb-3"><div id="appointmentList" class="space-y-2 text-sm"><p class="text-slate-500">Loading appointments…</p></div></section>
-<section class="bg-white border rounded-xl p-4"><h2 class="font-bold text-lg mb-1">Write prescription</h2><p id="selectedPatient" class="text-sm text-slate-500 mb-4">Select an approved appointment first.</p><form id="prescriptionForm" class="space-y-3"><input id="diagnosis" required placeholder="Diagnosis" class="w-full border rounded-lg p-3"><textarea id="medicines" required rows="5" placeholder="Medicines (name, dose, frequency, duration)" class="w-full border rounded-lg p-3"></textarea><textarea id="advice" rows="3" placeholder="Advice / instructions" class="w-full border rounded-lg p-3"></textarea><label class="block text-sm font-medium">Follow-up date<input id="followup" type="date" class="block w-full border rounded-lg p-3 mt-1"></label><button id="savePrescription" disabled class="w-full bg-teal-700 disabled:bg-slate-300 text-white rounded-lg p-3 font-semibold">Save prescription</button><p id="formMessage" class="text-sm"></p></form></section>
-</div></section><p id="globalError" class="text-sm text-rose-600 mt-4"></p>
+<body class="app-bg text-slate-800 min-h-screen">
+<header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+ <div class="max-w-[1500px] mx-auto px-4 sm:px-6 h-[76px] flex items-center justify-between">
+  <div class="flex items-center gap-3">
+   <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-teal-800 to-teal-600 text-white flex items-center justify-center font-black text-lg shadow">MA</div>
+   <div><p class="text-[10px] uppercase tracking-[.18em] font-extrabold text-teal-700">ExpectCare • Clinical Workspace</p><h1 class="font-extrabold text-lg leading-tight text-slate-900">Doctor Dashboard</h1></div>
+  </div>
+  <div class="flex items-center gap-3"><div class="hidden sm:block text-right"><p class="text-xs font-bold text-slate-800">Prof. (Dr.) Mansoor Ahmad</p><p class="text-[11px] text-slate-500">MBBS, MD Psychiatry • GMC Anantnag</p></div><div class="w-9 h-9 rounded-full bg-teal-50 border border-teal-100 text-teal-800 flex items-center justify-center"><span class="font-bold text-sm">Dr</span></div><button id="logout" class="hidden border border-slate-200 hover:bg-slate-50 rounded-lg px-3 py-2 text-xs font-bold">Sign out</button></div>
+ </div>
+</header>
+<main class="max-w-[1500px] mx-auto px-4 sm:px-6 py-6 space-y-6">
+ <section id="loginPanel" class="max-w-md mx-auto mt-12 panel p-7">
+  <div class="w-14 h-14 rounded-2xl bg-teal-50 text-teal-800 flex items-center justify-center text-2xl mb-4">✚</div>
+  <p class="text-[10px] uppercase tracking-[.17em] font-extrabold text-teal-700">Secure clinical access</p><h2 class="text-2xl font-extrabold mt-1">Doctor sign in</h2><p class="text-sm text-slate-500 mt-2 mb-6">Authorized clinical staff only.</p>
+  <form id="loginForm" class="space-y-3"><div><label class="field-label">Doctor email</label><input id="email" type="email" required autocomplete="username" placeholder="doctor@clinic.com" class="field"></div><div><label class="field-label">Password</label><input id="password" type="password" required autocomplete="current-password" placeholder="Enter password" class="field"></div><button class="btn-primary w-full py-3">Sign in to workspace</button></form><p id="loginError" class="text-sm text-rose-600 mt-4"></p>
+ </section>
+ <section id="dashboard" class="hidden space-y-6">
+  <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3"><div><p class="text-xs text-teal-700 font-extrabold uppercase tracking-[.14em]" id="todayLabel">Clinical overview</p><h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 mt-1">Good day, Doctor</h2><p class="text-sm text-slate-500 mt-1">Find a patient, review previous treatment and prepare a structured prescription.</p></div><button id="refresh" class="btn-soft self-start md:self-auto">↻ Refresh data</button></div>
+  <div class="grid sm:grid-cols-2 xl:grid-cols-4 gap-3">
+   <div class="panel p-4"><p class="text-[11px] uppercase tracking-wider font-bold text-slate-500">Approved appointments</p><div class="flex items-end justify-between mt-2"><strong id="totalCount" class="text-3xl text-slate-900">0</strong><span class="text-teal-700 text-xs font-bold">Booking queue</span></div></div>
+   <div class="panel p-4"><p class="text-[11px] uppercase tracking-wider font-bold text-slate-500">Patient records</p><div class="flex items-end justify-between mt-2"><strong id="patientCount" class="text-3xl text-slate-900">0</strong><span class="text-teal-700 text-xs font-bold">Saved patients</span></div></div>
+   <div class="panel p-4"><p class="text-[11px] uppercase tracking-wider font-bold text-slate-500">Prescriptions created</p><div class="flex items-end justify-between mt-2"><strong id="rxCount" class="text-3xl text-slate-900">0</strong><span class="text-teal-700 text-xs font-bold">Clinical records</span></div></div>
+   <div class="panel p-4"><p class="text-[11px] uppercase tracking-wider font-bold text-slate-500">Workspace status</p><div class="flex items-end justify-between mt-2"><strong class="text-xl text-emerald-700">Secure</strong><span class="text-[11px] text-slate-500">Doctor access</span></div></div>
+  </div>
+  <div class="grid xl:grid-cols-12 gap-5 items-start">
+   <aside class="xl:col-span-4 space-y-5">
+    <section class="panel p-4">
+     <div class="flex justify-between items-center gap-2"><div><h3 class="font-extrabold text-base">Find a patient</h3><p class="text-xs text-slate-500 mt-1">Search by name or mobile number</p></div><button id="newPatient" class="btn-soft whitespace-nowrap">＋ New patient</button></div>
+     <div class="relative mt-4"><input id="patientSearch" class="field pl-10" placeholder="Type patient name / phone..."><span class="absolute left-3 top-2.5 text-slate-400">⌕</span></div>
+     <div id="patientResults" class="space-y-2 mt-3 max-h-[270px] overflow-y-auto"><p class="text-xs text-slate-400 py-3">Search saved patients or choose an approved appointment below.</p></div>
+    </section>
+    <section class="panel p-4">
+     <div class="flex justify-between items-center"><div><h3 class="font-extrabold text-base">Appointment queue</h3><p class="text-xs text-slate-500 mt-1">Approved online bookings</p></div><span class="badge bg-amber-50 text-amber-700">Approved</span></div>
+     <div id="appointmentList" class="space-y-2 mt-4 max-h-[370px] overflow-y-auto"><p class="text-xs text-slate-400">Loading appointments…</p></div>
+    </section>
+    <section class="panel p-4">
+     <div class="flex items-center justify-between"><h3 class="font-extrabold text-base">Recent prescriptions</h3><span class="text-[10px] text-slate-400">Latest 12</span></div>
+     <div id="recentList" class="mt-3 space-y-2"><p class="text-xs text-slate-400">No prescriptions loaded.</p></div>
+    </section>
+   </aside>
+   <div class="xl:col-span-8 space-y-5">
+    <section class="panel p-5">
+     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4 mb-4"><div><p class="text-[10px] uppercase tracking-[.15em] text-teal-700 font-extrabold">Patient details</p><h3 class="text-lg font-extrabold mt-1">Current consultation</h3></div><span id="patientStatus" class="badge bg-slate-100 text-slate-500">No patient selected</span></div>
+     <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div class="sm:col-span-2"><label class="field-label">Patient full name *</label><input id="patientName" class="field" placeholder="Full name" required></div>
+      <div><label class="field-label">Mobile number *</label><input id="patientPhone" class="field" inputmode="tel" placeholder="+91..." required></div>
+      <div><label class="field-label">Age</label><input id="patientAge" class="field" type="number" min="0" max="120" placeholder="Years"></div>
+      <div><label class="field-label">Gender</label><select id="patientGender" class="field"><option value="">Select</option><option>Female</option><option>Male</option><option>Other</option></select></div>
+      <div class="sm:col-span-2"><label class="field-label">Allergies</label><input id="patientAllergies" class="field" placeholder="Drug / food allergy or None known"></div>
+      <div class="sm:col-span-2"><label class="field-label">Link appointment (optional)</label><select id="appointmentSelect" class="field"><option value="">No online appointment / walk-in</option></select></div>
+     </div>
+     <div id="patientSummary" class="hidden mt-4 rounded-xl bg-teal-50 border border-teal-100 p-3 text-xs text-teal-900"></div>
+    </section>
+    <form id="prescriptionForm" class="panel p-5 space-y-5">
+     <div class="flex items-center justify-between gap-3 border-b border-slate-100 pb-4"><div><p class="text-[10px] uppercase tracking-[.15em] text-teal-700 font-extrabold">Clinical documentation</p><h3 class="text-lg font-extrabold mt-1">Create prescription</h3></div><span class="badge bg-teal-50 text-teal-800">New visit</span></div>
+     <div class="grid sm:grid-cols-2 gap-3"><div><label class="field-label">Chief complaints</label><textarea id="complaints" rows="2" class="field" placeholder="Presenting symptoms / duration"></textarea></div><div><label class="field-label">Diagnosis / clinical impression *</label><textarea id="diagnosis" rows="2" class="field" required placeholder="Enter diagnosis"></textarea></div></div>
+     <div><div class="flex items-center justify-between mb-2"><div><h4 class="font-extrabold text-sm">Medication order</h4><p class="text-[11px] text-slate-500">Enter medicine, strength, dose, frequency and duration as clinically appropriate.</p></div><button type="button" id="addMedicine" class="btn-soft">＋ Add medicine</button></div>
+      <div class="hidden md:grid med-row px-2 text-[10px] uppercase tracking-wider text-slate-400 font-extrabold"><span>Medicine</span><span>Strength</span><span>Dose</span><span>Frequency</span><span>Duration / instructions</span><span></span></div>
+      <div id="medicineRows"></div>
+     </div>
+     <div class="grid sm:grid-cols-2 gap-3"><div><label class="field-label">Vitals (optional)</label><div class="grid grid-cols-2 gap-2"><input id="bp" class="field" placeholder="BP (e.g. 120/80)"><input id="pulse" class="field" placeholder="Pulse /min"><input id="weight" class="field" placeholder="Weight (kg)"><input id="spo2" class="field" placeholder="SpO₂ (%)"></div></div><div><label class="field-label">Clinical notes / advice</label><textarea id="advice" class="field" rows="4" placeholder="Counselling, precautions, investigations or other advice"></textarea></div></div>
+     <div class="grid sm:grid-cols-2 gap-3"><div><label class="field-label">Follow-up date</label><input id="followup" type="date" class="field"></div><div><label class="field-label">Review instructions</label><input id="reviewNote" class="field" placeholder="e.g. Review with reports / earlier if symptoms worsen"></div></div>
+     <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-t border-slate-100 pt-4"><p id="formMessage" class="text-xs text-slate-500">Prescription will be saved to this patient’s clinical history.</p><button id="savePrescription" class="btn-primary px-6 py-3">Save prescription</button></div>
+    </form>
+    <section class="panel p-5">
+     <div class="flex items-center justify-between gap-3"><div><p class="text-[10px] uppercase tracking-[.15em] text-teal-700 font-extrabold">Longitudinal record</p><h3 class="text-lg font-extrabold mt-1">Previous prescriptions</h3><p class="text-xs text-slate-500 mt-1">Select a patient to review earlier medicines and visit notes.</p></div><span id="historyCount" class="badge bg-slate-100 text-slate-500">0 records</span></div>
+     <div id="historyList" class="mt-4 space-y-3"><div class="rounded-xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-400">No patient selected.</div></div>
+    </section>
+   </div>
+  </div>
+  <p id="globalError" class="text-sm text-rose-600"></p>
+ </section>
 </main>
 <script>
-(() => {
+(function(){
  const cfg=window.SUPABASE_CONFIG;
- const client=window.supabase&&cfg?.url&&cfg?.anonKey?window.supabase.createClient(cfg.url,cfg.anonKey):null;
- const $=id=>document.getElementById(id); let session=null, appointments=[], selected=null;
- const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- function message(id,text,error=false){$(id).textContent=text;$(id).className='text-sm '+(error?'text-rose-600':'text-teal-700');}
+ const client=window.supabase&&cfg&&cfg.url&&cfg.anonKey?window.supabase.createClient(cfg.url,cfg.anonKey):null;
+ const $=function(id){return document.getElementById(id)};
+ let session=null,appointments=[],patients=[],recentPrescriptions=[],selectedPatient=null,selectedAppointment=null,currentHistory=[];
+ const today=new Date();
+ $('todayLabel').textContent=today.toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+ const safe=function(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
+ const msg=function(id,text,isError){$(id).textContent=text;$(id).className='text-xs '+(isError?'text-rose-600':'text-teal-700')};
+ const fmtDate=function(v){if(!v)return '—';const d=new Date(v+'T00:00:00');return isNaN(d)?v:d.toLocaleDateString(undefined,{day:'2-digit',month:'short',year:'numeric'})};
+ const cleanPhone=function(v){return String(v||'').replace(/[^\d+]/g,'').trim()};
+ function addMedicineRow(values){
+  values=values||{};
+  const row=document.createElement('div');row.className='med-row';
+  row.innerHTML='<input class="field med-name" placeholder="Medicine name" value="'+safe(values.name)+'"><input class="field" data-med="strength" placeholder="Strength" value="'+safe(values.strength)+'"><input class="field" data-med="dose" placeholder="Dose" value="'+safe(values.dose)+'"><input class="field" data-med="frequency" placeholder="Frequency" value="'+safe(values.frequency)+'"><input class="field med-instruction" data-med="duration" placeholder="Duration / instructions" value="'+safe(values.duration)+'"><button type="button" class="remove-med text-slate-400 hover:text-rose-600 font-bold" title="Remove medicine">×</button>';
+  $('medicineRows').appendChild(row);
+ }
+ function clearMedicineRows(){$('medicineRows').innerHTML='';addMedicineRow()}
+ function medicationData(){return Array.from($('medicineRows').querySelectorAll('.med-row')).map(function(row){return {name:row.querySelector('.med-name').value.trim(),strength:row.querySelector('[data-med="strength"]').value.trim(),dose:row.querySelector('[data-med="dose"]').value.trim(),frequency:row.querySelector('[data-med="frequency"]').value.trim(),duration:row.querySelector('[data-med="duration"]').value.trim()}}).filter(function(m){return m.name})}
+ function selectedPatientView(){
+  if(!selectedPatient){$('patientStatus').textContent='No patient selected';$('patientStatus').className='badge bg-slate-100 text-slate-500';$('patientSummary').classList.add('hidden');return}
+  $('patientStatus').textContent='Patient selected';$('patientStatus').className='badge bg-emerald-50 text-emerald-700';
+  $('patientSummary').classList.remove('hidden');
+  $('patientSummary').textContent='Selected patient: '+selectedPatient.full_name+' • '+selectedPatient.phone+(selectedPatient.age?' • '+selectedPatient.age+' years':'')+(selectedPatient.gender?' • '+selectedPatient.gender:'')+(selectedPatient.allergies?' • Allergies: '+selectedPatient.allergies:'');
+ }
+ function fillPatient(p,appointment){
+  selectedPatient=p?{id:p.id||null,full_name:p.full_name||p.patient_name||'',phone:p.phone||'',age:p.age||p.patient_age||'',gender:p.gender||p.patient_gender||'',allergies:p.allergies||''}:null;
+  selectedAppointment=appointment||null;
+  $('patientName').value=selectedPatient?selectedPatient.full_name:'';
+  $('patientPhone').value=selectedPatient?selectedPatient.phone:'';
+  $('patientAge').value=selectedPatient?selectedPatient.age:'';
+  $('patientGender').value=selectedPatient?selectedPatient.gender:'';
+  $('patientAllergies').value=selectedPatient?selectedPatient.allergies:'';
+  $('appointmentSelect').value=appointment?appointment.id:'';
+  selectedPatientView();loadPatientHistory();
+ }
+ function patientIdentityFromForm(){return {id:selectedPatient&&selectedPatient.id,full_name:$('patientName').value.trim(),phone:cleanPhone($('patientPhone').value),age:$('patientAge').value?Number($('patientAge').value):null,gender:$('patientGender').value,allergies:$('patientAllergies').value.trim()}}
+ async function loadData(){
+  msg('globalError','',false);
+  const results=await Promise.all([
+   client.from('appointments').select('id,patient_name,phone,clinic,concern,appointment_date,slot,status').eq('status','approved').order('appointment_date',{ascending:false}).limit(500),
+   client.from('patients').select('id,full_name,phone,age,gender,allergies,created_at').order('created_at',{ascending:false}).limit(1000),
+   client.from('prescriptions').select('id,patient_id,patient_name,patient_phone,patient_age,patient_gender,diagnosis,medicines,medication_items,advice,clinical_notes,complaints,vitals,follow_up_date,created_at').order('created_at',{ascending:false}).limit(500)
+  ]);
+  const ap=results[0],pt=results[1],rx=results[2];
+  if(ap.error)msg('globalError','Appointments: '+ap.error.message,true);else appointments=ap.data||[];
+  if(pt.error)msg('globalError','Patient records: '+pt.error.message,true);else patients=pt.data||[];
+  if(rx.error)msg('globalError','Prescription history: '+rx.error.message,true);else recentPrescriptions=rx.data||[];
+  $('totalCount').textContent=appointments.length;
+  $('patientCount').textContent=patients.length;
+  $('rxCount').textContent=recentPrescriptions.length;
+  renderAppointments();renderPatients($('patientSearch').value);renderRecent();
+  $('appointmentSelect').innerHTML='<option value="">No online appointment / walk-in</option>'+appointments.map(function(a){return '<option value="'+safe(a.id)+'">'+safe(a.patient_name)+' • '+safe(a.phone)+' • '+safe(fmtDate(a.appointment_date))+'</option>'}).join('');
+ }
+ function renderAppointments(){
+  $('appointmentList').innerHTML=appointments.length?appointments.map(function(a){return '<button type="button" data-appointment="'+safe(a.id)+'" class="patient-hit"><div class="flex justify-between gap-2"><b class="text-sm text-slate-800">'+safe(a.patient_name)+'</b><span class="text-[10px] text-emerald-700 font-bold">APPROVED</span></div><p class="text-xs text-slate-500 mt-1">'+safe(a.phone)+' • '+safe(a.clinic)+'</p><p class="text-[11px] text-slate-400 mt-1">'+safe(fmtDate(a.appointment_date))+' • '+safe(a.slot)+'</p></button>'}).join(''):'<p class="text-xs text-slate-400 py-3">No approved appointments right now. Use New patient for a walk-in.</p>';
+ }
+ function renderPatients(q){
+  q=String(q||'').toLowerCase().trim();
+  const ptMatches=patients.filter(function(p){return !q||(p.full_name+' '+p.phone).toLowerCase().includes(q)}).slice(0,20);
+  const apMatches=appointments.filter(function(a){return q&&(a.patient_name+' '+a.phone).toLowerCase().includes(q)}).slice(0,10);
+  const has=ptMatches.length||apMatches.length;
+  $('patientResults').innerHTML=has?ptMatches.map(function(p){const count=recentPrescriptions.filter(function(r){return r.patient_id===p.id}).length;return '<button type="button" data-patient="'+safe(p.id)+'" class="patient-hit"><div class="flex justify-between gap-2"><b class="text-sm">'+safe(p.full_name)+'</b><span class="text-[10px] font-bold text-teal-700">'+count+' RX</span></div><p class="text-xs text-slate-500 mt-1">'+safe(p.phone)+(p.age?' • '+safe(p.age)+' yrs':'')+'</p></button>'}).join('')+apMatches.map(function(a){return '<button type="button" data-appointment="'+safe(a.id)+'" class="patient-hit"><b class="text-sm">'+safe(a.patient_name)+'</b><p class="text-xs text-slate-500 mt-1">'+safe(a.phone)+' • Approved booking</p></button>'}).join(''):'<p class="text-xs text-slate-400 py-3">'+(q?'No matching patient record. You can add this patient as a new patient.':'Search by patient name or mobile number.')+'</p>';
+ }
+ function renderRecent(){
+  $('recentList').innerHTML=recentPrescriptions.slice(0,12).map(function(r){return '<div class="flex items-start justify-between gap-2 border-b border-slate-100 pb-2"><div class="min-w-0"><p class="text-xs font-bold truncate">'+safe(r.patient_name||'Patient')+'</p><p class="text-[11px] text-slate-500">'+safe(fmtDate(String(r.created_at).slice(0,10)))+' • '+safe(r.diagnosis||'Prescription')+'</p></div><button type="button" data-download="'+safe(r.id)+'" class="text-[11px] font-bold text-teal-700 whitespace-nowrap">PDF ↓</button></div>'}).join('')||'<p class="text-xs text-slate-400">No prescriptions saved yet.</p>';
+ }
+ async function loadPatientHistory(){
+  currentHistory=[];
+  if(!selectedPatient){$('historyCount').textContent='0 records';$('historyList').innerHTML='<div class="rounded-xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-400">Select a patient to view previous prescriptions.</div>';return}
+  const {data,error}=await client.from('prescriptions').select('id,patient_id,patient_name,patient_phone,patient_age,patient_gender,diagnosis,medicines,medication_items,advice,clinical_notes,complaints,vitals,follow_up_date,created_at').eq('patient_id',selectedPatient.id||'00000000-0000-0000-0000-000000000000').order('created_at',{ascending:false}).limit(100);
+  if(error){msg('globalError','Could not load patient history: '+error.message,true);return}
+  currentHistory=data||[];
+  if(!selectedPatient.id){currentHistory=recentPrescriptions.filter(function(r){return cleanPhone(r.patient_phone)===cleanPhone(selectedPatient.phone)})}
+  $('historyCount').textContent=currentHistory.length+' records';
+  $('historyList').innerHTML=currentHistory.length?currentHistory.map(function(r){const meds=Array.isArray(r.medication_items)?r.medication_items:[];const medText=meds.length?meds.map(function(m){return [m.name,m.strength,m.dose,m.frequency,m.duration].filter(Boolean).join(' • ')}).join('<br>'):safe(r.medicines||'No medicine details saved');return '<article class="border border-slate-200 rounded-xl p-4"><div class="flex flex-col sm:flex-row sm:items-start justify-between gap-2"><div><p class="text-xs font-extrabold text-slate-800">'+safe(fmtDate(String(r.created_at).slice(0,10)))+' <span class="text-slate-400 font-medium">• Previous visit</span></p><p class="text-sm font-bold text-teal-800 mt-1">'+safe(r.diagnosis)+'</p></div><button type="button" data-download="'+safe(r.id)+'" class="btn-soft whitespace-nowrap">Download PDF</button></div><div class="mt-3 rounded-lg bg-slate-50 p-3 text-xs leading-6"><p class="font-bold text-slate-500 mb-1 uppercase tracking-wider text-[10px]">Medicines prescribed</p>'+medText+'</div>'+(r.advice?'<p class="text-xs text-slate-600 mt-3"><b>Advice:</b> '+safe(r.advice)+'</p>':'')+(r.follow_up_date?'<p class="text-xs text-slate-600 mt-1"><b>Follow-up:</b> '+safe(fmtDate(r.follow_up_date))+'</p>':'')+'</article>'}).join(''):'<div class="rounded-xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-400">No previous prescriptions found for this patient.</div>';
+ }
+ async function chooseAppointment(a){
+  const existing=patients.find(function(p){return cleanPhone(p.phone)===cleanPhone(a.phone)});
+  const patient=existing||{full_name:a.patient_name,phone:a.phone};
+  fillPatient(patient,a);
+  $('patientSearch').value=a.patient_name;
+  renderPatients(a.patient_name);
+ }
+ function clearFormForNewPatient(){
+  selectedPatient=null;selectedAppointment=null;
+  $('patientName').value='';$('patientPhone').value='';$('patientAge').value='';$('patientGender').value='';$('patientAllergies').value='';$('appointmentSelect').value='';
+  $('diagnosis').value='';$('complaints').value='';$('advice').value='';$('followup').value='';$('reviewNote').value='';
+  $('bp').value='';$('pulse').value='';$('weight').value='';$('spo2').value='';clearMedicineRows();selectedPatientView();loadPatientHistory();$('patientName').focus();
+ }
+ async function chooseSavedPatient(p){
+  const lastAppt=appointments.find(function(a){return cleanPhone(a.phone)===cleanPhone(p.phone)});
+  fillPatient(p,lastAppt||null);
+  $('patientSearch').value=p.full_name;renderPatients(p.full_name);
+ }
+ function collectVitals(){const v={};[['BP',$('bp').value],['Pulse',$('pulse').value],['Weight',$('weight').value],['SpO2',$('spo2').value]].forEach(function(x){if(x[1].trim())v[x[0]]=x[1].trim()});return v}
+ function medicinesAsText(meds){return meds.map(function(m,i){return (i+1)+'. '+m.name+(m.strength?' ('+m.strength+')':'')+' — '+[m.dose,m.frequency,m.duration].filter(Boolean).join(', ')}).join('\n')}
+ async function ensurePatientRecord(p){
+  const payload={doctor_id:session.user.id,full_name:p.full_name,phone:p.phone,age:p.age,gender:p.gender,allergies:p.allergies||''};
+  const {data,error}=await client.from('patients').upsert(payload,{onConflict:'doctor_id,phone'}).select('id,full_name,phone,age,gender,allergies').single();
+  if(error)throw error;
+  return data;
+ }
+ async function savePrescription(e){
+  e.preventDefault();
+  if(!session)return;
+  const p=patientIdentityFromForm();
+  if(!p.full_name||!p.phone){msg('formMessage','Patient name and mobile number are required.',true);return}
+  const diagnosis=$('diagnosis').value.trim();
+  if(!diagnosis){msg('formMessage','Please enter the diagnosis / clinical impression.',true);return}
+  const meds=medicationData();
+  if(!meds.length){msg('formMessage','Add at least one medicine before saving the prescription.',true);return}
+  const btn=$('savePrescription');btn.disabled=true;btn.textContent='Saving prescription…';msg('formMessage','Saving secure clinical record…',false);
+  try{
+   const patient=await ensurePatientRecord(p);
+   const vitals=collectVitals();
+   const payload={patient_id:patient.id,appointment_id:selectedAppointment?selectedAppointment.id:null,doctor_id:session.user.id,patient_name:patient.full_name,patient_phone:patient.phone,patient_age:patient.age,patient_gender:patient.gender,diagnosis:diagnosis,complaints:$('complaints').value.trim(),medicines:medicinesAsText(meds),medication_items:meds,advice:$('advice').value.trim()+( $('reviewNote').value.trim()?'\nReview: '+$('reviewNote').value.trim():''),clinical_notes:'',vitals:vitals,follow_up_date:$('followup').value||null};
+   const {data,error}=await client.from('prescriptions').insert(payload).select('*').single();
+   if(error)throw error;
+   selectedPatient=patient;selectedPatientView();
+   await loadData();await loadPatientHistory();
+   msg('formMessage','Prescription saved. Use Download PDF to issue the formatted prescription.',false);
+   latestSaved=data;
+   let existing=document.getElementById('latestPdfButton');
+   if(!existing){existing=document.createElement('button');existing.id='latestPdfButton';existing.type='button';existing.className='btn-soft';$('formMessage').parentElement.appendChild(existing)}
+   existing.textContent='Download latest prescription PDF';existing.onclick=function(){downloadPrescription(latestSaved)};
+  }catch(err){msg('formMessage','Could not save prescription: '+(err.message||'Unknown error'),true)}
+  finally{btn.disabled=false;btn.textContent='Save prescription'}
+ }
+ let latestSaved=null;
+ function downloadPrescription(r){
+  if(!r)return;
+  if(!window.jspdf||!window.jspdf.jsPDF){window.print();return}
+  const jsPDF=window.jspdf.jsPDF;const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const teal=[15,118,110],dark=[15,23,42],muted=[90,105,120];
+  const name=r.patient_name||patientIdentityFromForm().full_name||'Patient';
+  const phone=r.patient_phone||patientIdentityFromForm().phone||'';
+  const medData=Array.isArray(r.medication_items)?r.medication_items:[];
+  const fallback=String(r.medicines||'').split('\n').filter(Boolean).map(function(line){return {name:line,strength:'',dose:'',frequency:'',duration:''}});
+  const meds=medData.length?medData:fallback;
+  doc.setFillColor(7,74,69);doc.rect(0,0,210,43,'F');
+  doc.setFillColor(255,255,255);doc.circle(22,20,9,'F');doc.setTextColor(7,74,69);doc.setFont('helvetica','bold');doc.setFontSize(11);doc.text('MA',22,23,{align:'center'});
+  doc.setTextColor(255,255,255);doc.setFontSize(15);doc.text('PROF. (DR.) MANSOOR AHMAD',38,15);
+  doc.setFontSize(9);doc.setFont('helvetica','normal');doc.text('MBBS, MD Psychiatry | Professor & Head, Department of Psychiatry',38,22);
+  doc.text('Government Medical College (GMC), Anantnag',38,28);doc.text('ExpectCare Clinic, Cheeni Chowk, Anantnag | +91 9906927006',38,34);
+  doc.setTextColor(dark);doc.setFont('helvetica','bold');doc.setFontSize(16);doc.text('MEDICAL PRESCRIPTION',15,54);
+  doc.setDrawColor(13,148,136);doc.setLineWidth(.7);doc.line(15,57,195,57);
+  doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(muted);doc.text('Prescription date: '+new Date(r.created_at||Date.now()).toLocaleDateString(),15,64);
+  doc.text('Prescription ID: '+String(r.id||'').slice(0,8).toUpperCase(),195,64,{align:'right'});
+  doc.setFillColor(241,248,247);doc.roundedRect(15,70,180,27,3,3,'F');
+  doc.setTextColor(dark);doc.setFont('helvetica','bold');doc.setFontSize(10);doc.text('PATIENT DETAILS',20,77);
+  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.text('Name: '+name,20,84);doc.text('Mobile: '+phone,110,84);
+  doc.text('Age: '+(r.patient_age||'—')+'    Gender: '+(r.patient_gender||'—'),20,91);
+  let y=106;
+  doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(dark);doc.text('CHIEF COMPLAINTS',15,y);y+=6;
+  doc.setFont('helvetica','normal');doc.setFontSize(9);const comp=doc.splitTextToSize(r.complaints||'Not recorded',178);doc.text(comp,15,y);y+=Math.max(7,comp.length*4.5)+3;
+  doc.setFont('helvetica','bold');doc.setFontSize(10);doc.text('DIAGNOSIS / CLINICAL IMPRESSION',15,y);y+=6;
+  doc.setFont('helvetica','normal');doc.setFontSize(9);const diag=doc.splitTextToSize(r.diagnosis||'—',178);doc.text(diag,15,y);y+=Math.max(8,diag.length*4.5)+2;
+  doc.autoTable({startY:y,head:[['MEDICINE','STRENGTH','DOSE','FREQUENCY','DURATION / INSTRUCTIONS']],body:meds.map(function(m){return [m.name||'',m.strength||'',m.dose||'',m.frequency||'',m.duration||'']}),theme:'grid',styles:{fontSize:8,cellPadding:2.8,overflow:'linebreak'},headStyles:{fillColor:teal,textColor:255,fontStyle:'bold'},margin:{left:15,right:15}});
+  y=doc.lastAutoTable.finalY+9;
+  if(r.vitals&&Object.keys(r.vitals).length){doc.setFont('helvetica','bold');doc.setFontSize(9);doc.text('VITALS: '+Object.keys(r.vitals).map(function(k){return k+': '+r.vitals[k]}).join('   |   '),15,y);y+=8}
+  if(r.advice){doc.setFont('helvetica','bold');doc.setFontSize(10);doc.text('ADVICE / INSTRUCTIONS',15,y);y+=5;doc.setFont('helvetica','normal');doc.setFontSize(9);const adv=doc.splitTextToSize(r.advice,178);doc.text(adv,15,y);y+=adv.length*4.5+5}
+  if(r.follow_up_date){doc.setFont('helvetica','bold');doc.setFontSize(9);doc.text('FOLLOW-UP: '+new Date(r.follow_up_date+'T00:00:00').toLocaleDateString(),15,y);y+=8}
+  const pageH=doc.internal.pageSize.getHeight();if(y>pageH-35){doc.addPage();y=25}
+  doc.setDrawColor(160,174,192);doc.line(132,y+13,193,y+13);doc.setFont('helvetica','bold');doc.setFontSize(9);doc.text('Prof. (Dr.) Mansoor Ahmad',193,y+19,{align:'right'});doc.setFont('helvetica','normal');doc.setFontSize(8);doc.text('MBBS, MD Psychiatry',193,y+24,{align:'right'});
+  doc.setFontSize(7);doc.setTextColor(120,130,140);doc.text('This document contains confidential patient health information. Keep it secure.',105,287,{align:'center'});
+  const fileName='Prescription_'+name.replace(/[^a-z0-9]+/gi,'_')+'_'+String(r.created_at||Date.now()).slice(0,10)+'.pdf';
+  doc.save(fileName);
+ }
  async function enter(s){
-   session=s;
-   if(!s){$('loginPanel').classList.remove('hidden');$('dashboard').classList.add('hidden');$('logout').classList.add('hidden');return;}
-   if(s.user?.app_metadata?.role!=='doctor'){await client.auth.signOut();message('loginError','This account does not have the doctor role. Sign out and contact the project owner.',true);return;}
-   $('loginPanel').classList.add('hidden');$('dashboard').classList.remove('hidden');$('logout').classList.remove('hidden');await loadAppointments();
+  session=s;
+  if(!s){$('loginPanel').classList.remove('hidden');$('dashboard').classList.add('hidden');$('logout').classList.add('hidden');return}
+  if(s.user&&s.user.app_metadata&&s.user.app_metadata.role!=='doctor'){await client.auth.signOut();msg('loginError','This account does not have doctor access. Ask the project owner to grant the doctor role.',true);return}
+  $('loginPanel').classList.add('hidden');$('dashboard').classList.remove('hidden');$('logout').classList.remove('hidden');await loadData();
  }
- async function loadAppointments(){
-   message('globalError','');
-   const {data,error}=await client.from('appointments').select('id,patient_name,phone,clinic,concern,appointment_date,slot,status').eq('status','approved').order('appointment_date',{ascending:true}).limit(300);
-   if(error){message('globalError','Could not load appointments: '+error.message,true);return;}
-   appointments=data||[];$('totalCount').textContent=appointments.length;$('patientCount').textContent=appointments.length;render();
- }
- function render(){
-   const q=$('search').value.toLowerCase().trim();
-   const rows=appointments.filter(a=>[a.patient_name,a.phone,a.clinic,a.concern].some(v=>String(v||'').toLowerCase().includes(q)));
-   $('appointmentList').innerHTML=rows.length?rows.map(a=>'<button data-id="'+safe(a.id)+'" class="w-full text-left border rounded-lg p-3 hover:border-teal-500 '+(selected?.id===a.id?'border-teal-600 bg-teal-50':'')+'"><b>'+safe(a.patient_name)+'</b><span class="block text-slate-500">'+safe(a.phone)+' • '+safe(a.clinic)+'</span><span class="block text-slate-500">'+safe(a.appointment_date)+' • '+safe(a.slot)+'</span><span class="block text-xs mt-1">'+safe(a.concern)+'</span></button>').join(''):'<p class="text-slate-500">No approved appointments found.</p>';
- }
- $('loginForm').addEventListener('submit',async e=>{e.preventDefault();if(!client){message('loginError','Supabase config is missing.',true);return;}message('loginError','Signing in…');const {data,error}=await client.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error){message('loginError',error.message,true);return;}await enter(data.session);});
- $('appointmentList').addEventListener('click',e=>{const b=e.target.closest('button[data-id]');if(!b)return;selected=appointments.find(a=>a.id===b.dataset.id);$('selectedPatient').textContent=selected.patient_name+' • '+selected.phone+' • '+selected.appointment_date; $('savePrescription').disabled=false;render();});
- $('prescriptionForm').addEventListener('submit',async e=>{e.preventDefault();if(!selected||!session)return;const btn=$('savePrescription');btn.disabled=true;message('formMessage','Saving…');const payload={appointment_id:selected.id,doctor_id:session.user.id,diagnosis:$('diagnosis').value.trim(),medicines:$('medicines').value.trim(),advice:$('advice').value.trim(),follow_up_date:$('followup').value||null};const {error}=await client.from('prescriptions').insert(payload);if(error)message('formMessage','Could not save: '+error.message,true);else{message('formMessage','Prescription saved successfully.');$('prescriptionForm').reset();}btn.disabled=false;});
- $('refresh').addEventListener('click',loadAppointments);$('search').addEventListener('input',render);$('logout').addEventListener('click',async()=>{await client.auth.signOut();selected=null;await enter(null);});if(client)client.auth.getSession().then(({data})=>enter(data.session));else message('loginError','Supabase configuration not found.',true);
+ $('loginForm').addEventListener('submit',async function(e){e.preventDefault();if(!client){msg('loginError','Supabase configuration is missing.',true);return}msg('loginError','Signing in…',false);const result=await client.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(result.error){msg('loginError',result.error.message,true);return}await enter(result.data.session)});
+ $('patientSearch').addEventListener('input',function(){renderPatients(this.value)});
+ $('patientResults').addEventListener('click',function(e){const pb=e.target.closest('[data-patient]');if(pb){const p=patients.find(function(x){return x.id===pb.dataset.patient});if(p)chooseSavedPatient(p);return}const ab=e.target.closest('[data-appointment]');if(ab){const a=appointments.find(function(x){return x.id===ab.dataset.appointment});if(a)chooseAppointment(a)}});
+ $('appointmentList').addEventListener('click',function(e){const b=e.target.closest('[data-appointment]');if(!b)return;const a=appointments.find(function(x){return x.id===b.dataset.appointment});if(a)chooseAppointment(a)});
+ $('appointmentSelect').addEventListener('change',function(){const a=appointments.find(function(x){return x.id===this.value});if(a)chooseAppointment(a);else selectedAppointment=null});
+ $('newPatient').addEventListener('click',clearFormForNewPatient);
+ $('addMedicine').addEventListener('click',function(){addMedicineRow()});
+ $('medicineRows').addEventListener('click',function(e){const b=e.target.closest('.remove-med');if(b){b.closest('.med-row').remove();if(!$('medicineRows').children.length)addMedicineRow()}});
+ $('prescriptionForm').addEventListener('submit',savePrescription);
+ $('recentList').addEventListener('click',function(e){const b=e.target.closest('[data-download]');if(!b)return;const r=recentPrescriptions.find(function(x){return x.id===b.dataset.download});downloadPrescription(r)});
+ $('historyList').addEventListener('click',function(e){const b=e.target.closest('[data-download]');if(!b)return;const r=currentHistory.find(function(x){return x.id===b.dataset.download});downloadPrescription(r)});
+ $('refresh').addEventListener('click',loadData);
+ $('logout').addEventListener('click',async function(){await client.auth.signOut();session=null;selectedPatient=null;selectedAppointment=null;currentHistory=[];$('dashboard').classList.add('hidden');$('logout').classList.add('hidden');$('loginPanel').classList.remove('hidden')});
+ clearMedicineRows();
+ if(client)client.auth.getSession().then(function(r){enter(r.data.session)});else msg('loginError','Supabase configuration not found. Check config.js.',true);
 })();
-</script></body></html>
+</script>
+</body>
+</html>
