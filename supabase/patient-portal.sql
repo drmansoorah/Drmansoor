@@ -51,6 +51,10 @@ with ids as (
 update public.appointments a set patient_code=ids.new_code
 from ids where a.id=ids.id;
 
+-- Walk-in patients added from Doctor Dashboard use the same DRMAD sequence.
+alter table public.patients alter column patient_code
+set default ('DRMAD' || lpad(nextval('public.patient_portal_id_seq')::text,3,'0'));
+
 create unique index if not exists patients_patient_code_unique on public.patients(patient_code);
 create unique index if not exists appointments_patient_code_unique
 on public.appointments(patient_code) where patient_code is not null;
