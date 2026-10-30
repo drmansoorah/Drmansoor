@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Doctor Portal | Dr Mansoor</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./config.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+<header class="bg-white border-b"><div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center"><div><p class="text-xs uppercase tracking-widest text-teal-700 font-bold">Dr Mansoor • Clinic</p><h1 class="text-2xl font-bold">Doctor Portal</h1></div><button id="logout" class="hidden border rounded-lg px-4 py-2 text-sm">Sign out</button></div></header>
+<main class="max-w-6xl mx-auto p-4 sm:p-6">
+<section id="loginPanel" class="max-w-md mx-auto mt-10 bg-white rounded-2xl shadow-sm border p-6"><h2 class="text-xl font-bold mb-1">Doctor sign in</h2><p class="text-sm text-slate-500 mb-5">Sign in using your authorized doctor account.</p><form id="loginForm" class="space-y-3"><input id="email" type="email" required autocomplete="username" placeholder="Doctor email" class="w-full border rounded-lg p-3"><input id="password" type="password" required autocomplete="current-password" placeholder="Password" class="w-full border rounded-lg p-3"><button class="w-full bg-teal-700 text-white rounded-lg p-3 font-semibold">Sign in</button></form><p id="loginError" class="text-sm text-rose-600 mt-3"></p></section>
+<section id="dashboard" class="hidden space-y-5">
+<div class="grid sm:grid-cols-3 gap-3"><div class="bg-white border rounded-xl p-4"><p class="text-sm text-slate-500">Approved appointments</p><p id="totalCount" class="text-2xl font-bold">0</p></div><div class="bg-white border rounded-xl p-4"><p class="text-sm text-slate-500">Patients loaded</p><p id="patientCount" class="text-2xl font-bold">0</p></div><div class="bg-white border rounded-xl p-4"><p class="text-sm text-slate-500">Portal access</p><p class="font-semibold text-teal-700">Doctor account</p></div></div>
+<div class="grid lg:grid-cols-2 gap-5">
+<section class="bg-white border rounded-xl p-4"><div class="flex justify-between items-center mb-3"><h2 class="font-bold text-lg">Approved appointments</h2><button id="refresh" class="text-sm text-teal-700">Refresh</button></div><input id="search" placeholder="Search patient, phone or clinic" class="w-full border rounded-lg p-2 mb-3"><div id="appointmentList" class="space-y-2 text-sm"><p class="text-slate-500">Loading appointments…</p></div></section>
+<section class="bg-white border rounded-xl p-4"><h2 class="font-bold text-lg mb-1">Write prescription</h2><p id="selectedPatient" class="text-sm text-slate-500 mb-4">Select an approved appointment first.</p><form id="prescriptionForm" class="space-y-3"><input id="diagnosis" required placeholder="Diagnosis" class="w-full border rounded-lg p-3"><textarea id="medicines" required rows="5" placeholder="Medicines (name, dose, frequency, duration)" class="w-full border rounded-lg p-3"></textarea><textarea id="advice" rows="3" placeholder="Advice / instructions" class="w-full border rounded-lg p-3"></textarea><label class="block text-sm font-medium">Follow-up date<input id="followup" type="date" class="block w-full border rounded-lg p-3 mt-1"></label><button id="savePrescription" disabled class="w-full bg-teal-700 disabled:bg-slate-300 text-white rounded-lg p-3 font-semibold">Save prescription</button><p id="formMessage" class="text-sm"></p></form></section>
+</div></section><p id="globalError" class="text-sm text-rose-600 mt-4"></p>
+</main>
+<script>
+(() => {
+ const cfg=window.SUPABASE_CONFIG;
+ const client=window.supabase&&cfg?.url&&cfg?.anonKey?window.supabase.createClient(cfg.url,cfg.anonKey):null;
+ const $=id=>document.getElementById(id); let session=null, appointments=[], selected=null;
+ const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ function message(id,text,error=false){$(id).textContent=text;$(id).className='text-sm '+(error?'text-rose-600':'text-teal-700');}
+ async function enter(s){
+   session=s;
+   if(!s){$('loginPanel').classList.remove('hidden');$('dashboard').classList.add('hidden');$('logout').classList.add('hidden');return;}
+   if(s.user?.app_metadata?.role!=='doctor'){await client.auth.signOut();message('loginError','This account does not have the doctor role. Sign out and contact the project owner.',true);return;}
+   $('loginPanel').classList.add('hidden');$('dashboard').classList.remove('hidden');$('logout').classList.remove('hidden');await loadAppointments();
+ }
+ async function loadAppointments(){
+   message('globalError','');
+   const {data,error}=await client.from('appointments').select('id,patient_name,phone,clinic,concern,appointment_date,slot,status').eq('status','approved').order('appointment_date',{ascending:true}).limit(300);
+   if(error){message('globalError','Could not load appointments: '+error.message,true);return;}
+   appointments=data||[];$('totalCount').textContent=appointments.length;$('patientCount').textContent=appointments.length;render();
+ }
+ function render(){
+   const q=$('search').value.toLowerCase().trim();
+   const rows=appointments.filter(a=>[a.patient_name,a.phone,a.clinic,a.concern].some(v=>String(v||'').toLowerCase().includes(q)));
+   $('appointmentList').innerHTML=rows.length?rows.map(a=>'<button data-id="'+safe(a.id)+'" class="w-full text-left border rounded-lg p-3 hover:border-teal-500 '+(selected?.id===a.id?'border-teal-600 bg-teal-50':'')+'"><b>'+safe(a.patient_name)+'</b><span class="block text-slate-500">'+safe(a.phone)+' • '+safe(a.clinic)+'</span><span class="block text-slate-500">'+safe(a.appointment_date)+' • '+safe(a.slot)+'</span><span class="block text-xs mt-1">'+safe(a.concern)+'</span></button>').join(''):'<p class="text-slate-500">No approved appointments found.</p>';
+ }
+ $('loginForm').addEventListener('submit',async e=>{e.preventDefault();if(!client){message('loginError','Supabase config is missing.',true);return;}message('loginError','Signing in…');const {data,error}=await client.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error){message('loginError',error.message,true);return;}await enter(data.session);});
+ $('appointmentList').addEventListener('click',e=>{const b=e.target.closest('button[data-id]');if(!b)return;selected=appointments.find(a=>a.id===b.dataset.id);$('selectedPatient').textContent=selected.patient_name+' • '+selected.phone+' • '+selected.appointment_date; $('savePrescription').disabled=false;render();});
+ $('prescriptionForm').addEventListener('submit',async e=>{e.preventDefault();if(!selected||!session)return;const btn=$('savePrescription');btn.disabled=true;message('formMessage','Saving…');const payload={appointment_id:selected.id,doctor_id:session.user.id,diagnosis:$('diagnosis').value.trim(),medicines:$('medicines').value.trim(),advice:$('advice').value.trim(),follow_up_date:$('followup').value||null};const {error}=await client.from('prescriptions').insert(payload);if(error)message('formMessage','Could not save: '+error.message,true);else{message('formMessage','Prescription saved successfully.');$('prescriptionForm').reset();}btn.disabled=false;});
+ $('refresh').addEventListener('click',loadAppointments);$('search').addEventListener('input',render);$('logout').addEventListener('click',async()=>{await client.auth.signOut();selected=null;await enter(null);});if(client)client.auth.getSession().then(({data})=>enter(data.session));else message('loginError','Supabase configuration not found.',true);
+})();
+</script></body></html>
