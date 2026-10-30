@@ -32,7 +32,7 @@ begin
  else
    perform setval('public.patient_portal_id_seq',1,false);
  end if;
-end $;
+end $$;
 
 -- Central ID generator: DRMAD001 ... DRMAD999, then DRMAD1000 and onward.
 create or replace function public.generate_patient_portal_id()
@@ -41,13 +41,13 @@ language plpgsql
 volatile
 security definer
 set search_path = public, pg_temp
-as $
+as $$
 declare v_id bigint;
 begin
  v_id:=nextval('public.patient_portal_id_seq');
  return 'DRMAD' || case when v_id<1000 then lpad(v_id::text,3,'0') else v_id::text end;
 end;
-$;
+$$;
 revoke all on function public.generate_patient_portal_id() from public;
 grant execute on function public.generate_patient_portal_id() to authenticated;
 
