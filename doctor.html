@@ -75,9 +75,9 @@
       <div><label class="field-label">Gender</label><select id="patientGender" class="field"><option value="">Select</option><option>Female</option><option>Male</option><option>Other</option></select></div>
       <div class="sm:col-span-2"><label class="field-label">Allergies</label><input id="patientAllergies" class="field" placeholder="Drug / food allergy or None known"></div><div class="sm:col-span-2 rounded-lg bg-teal-50 border border-teal-100 px-3 py-2 text-xs text-teal-900"><b>Patient ID:</b> <span id="patientCodeDisplay">Generated when patient is saved</span> — share this ID with the patient for portal access.</div>
       <div class="sm:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
-       <label class="field-label">Private Patient Portal Access Code</label>
+       <label class="field-label">MindCare Access Code (7 characters)</label>
        <div class="flex gap-2"><input id="portalAccessCode" class="field bg-white font-mono tracking-wider" readonly placeholder="Generate when ready to share"><button type="button" id="generatePortalCode" class="btn-soft whitespace-nowrap">Generate / reset</button></div>
-       <p id="portalCodeMessage" class="text-[11px] text-slate-500 mt-2">Generate a private code for the patient. It will be saved when you save the prescription. Share it privately with the Patient ID.</p>
+       <p id="portalCodeMessage" class="text-[11px] text-slate-500 mt-2">Generate a 7-character code using letters and numbers only. It will be saved when you save the prescription. Share it privately with the Patient ID.</p>
       </div>
       <div class="sm:col-span-2"><label class="field-label">Link appointment (optional)</label><select id="appointmentSelect" class="field"><option value="">No online appointment / walk-in</option></select></div>
      </div>
@@ -123,7 +123,7 @@
  }
  function clearMedicineRows(){$('medicineRows').innerHTML='';addMedicineRow()}
  function medicationData(){return Array.from($('medicineRows').querySelectorAll('.med-row')).map(function(row){return {name:row.querySelector('.med-name').value.trim(),strength:row.querySelector('[data-med="strength"]').value.trim(),dose:row.querySelector('[data-med="dose"]').value.trim(),frequency:row.querySelector('[data-med="frequency"]').value.trim(),duration:row.querySelector('[data-med="duration"]').value.trim()}}).filter(function(m){return m.name})}
- function makePortalCode(){const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';const bytes=new Uint8Array(24);if(!window.crypto||!window.crypto.getRandomValues)throw new Error('Secure random code generation is unavailable in this browser.');window.crypto.getRandomValues(bytes);return Array.from(bytes).map(function(b){return alphabet[b%alphabet.length]}).join('')}
+ function makePortalCode(){const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';const bytes=new Uint8Array(7);if(!window.crypto||!window.crypto.getRandomValues)throw new Error('Secure random code generation is unavailable in this browser.');window.crypto.getRandomValues(bytes);return Array.from(bytes).map(function(b){return alphabet[b%alphabet.length]}).join('')}
  function selectedPatientView(){
   if(!selectedPatient){$('patientStatus').textContent='No patient selected';$('patientStatus').className='badge bg-slate-100 text-slate-500';$('patientSummary').classList.add('hidden');return}
   $('patientStatus').textContent='Patient selected';$('patientStatus').className='badge bg-emerald-50 text-emerald-700';
@@ -137,7 +137,7 @@
   $('patientPhone').value=selectedPatient?selectedPatient.phone:'';
   $('patientAge').value=selectedPatient?selectedPatient.age:'';
   $('patientGender').value=selectedPatient?selectedPatient.gender:'';
-  $('patientAllergies').value=selectedPatient?selectedPatient.allergies:'';$('patientCodeDisplay').textContent=selectedPatient&&selectedPatient.patient_code?selectedPatient.patient_code:'Generated when patient is saved';$('portalAccessCode').value='';$('portalCodeMessage').textContent=selectedPatient&&selectedPatient.portal_access_enabled?'A private portal code is already active. Generate/reset only if you need to issue a new code.':'No portal code set yet. Generate a code before or while saving a prescription.';
+  $('patientAllergies').value=selectedPatient?selectedPatient.allergies:'';$('patientCodeDisplay').textContent=selectedPatient&&selectedPatient.patient_code?selectedPatient.patient_code:'Generated when patient is saved';$('portalAccessCode').value='';$('portalCodeMessage').textContent=selectedPatient&&selectedPatient.portal_access_enabled?'A MindCare access code is already active. Generate/reset only if you need to issue a new code.':'No portal code set yet. Generate a code before or while saving a prescription.';
   $('appointmentSelect').value=appointment?appointment.id:'';
   selectedPatientView();loadPatientHistory();
  }
@@ -298,7 +298,7 @@
  $('appointmentList').addEventListener('click',function(e){const b=e.target.closest('[data-appointment]');if(!b)return;const a=appointments.find(function(x){return x.id===b.dataset.appointment});if(a)chooseAppointment(a)});
  $('appointmentSelect').addEventListener('change',function(){const a=appointments.find(function(x){return x.id===this.value});if(a)chooseAppointment(a);else selectedAppointment=null});
  $('newPatient').addEventListener('click',clearFormForNewPatient);
- $('generatePortalCode').addEventListener('click',function(){try{$('portalAccessCode').value=makePortalCode();$('portalCodeMessage').textContent='New private code generated. It will replace the previous code when you save the prescription.'}catch(err){$('portalCodeMessage').textContent=err.message}});
+ $('generatePortalCode').addEventListener('click',function(){try{$('portalAccessCode').value=makePortalCode();$('portalCodeMessage').textContent='New 7-character MindCare code generated. It will replace the previous code when you save the prescription.'}catch(err){$('portalCodeMessage').textContent=err.message}});
  $('addMedicine').addEventListener('click',function(){addMedicineRow()});
  $('medicineRows').addEventListener('click',function(e){const b=e.target.closest('.remove-med');if(b){b.closest('.med-row').remove();if(!$('medicineRows').children.length)addMedicineRow()}});
  $('prescriptionForm').addEventListener('submit',savePrescription);
