@@ -53,7 +53,7 @@
    <aside class="xl:col-span-4 space-y-5">
     <section class="panel p-4">
      <div class="flex justify-between items-center gap-2"><div><h3 class="font-extrabold text-base">Find a patient</h3><p class="text-xs text-slate-500 mt-1">Search by name or mobile number</p></div><button id="newPatient" class="btn-soft whitespace-nowrap">＋ New patient</button></div>
-     <div class="relative mt-4"><input id="patientSearch" class="field pl-10" placeholder="Type patient name / phone..."><span class="absolute left-3 top-2.5 text-slate-400">⌕</span></div>
+     <div class="mt-4 flex gap-2"><div class="relative flex-1"><input id="patientSearch" class="field pl-10" placeholder="Type patient name / phone..."><span class="absolute left-3 top-2.5 text-slate-400">⌕</span></div><button type="button" id="patientSearchBtn" class="btn-primary">Search</button></div>
      <div id="patientResults" class="space-y-2 mt-3 max-h-[270px] overflow-y-auto"><p class="text-xs text-slate-400 py-3">Search saved patients or choose an approved appointment below.</p></div>
     </section>
     <section class="panel p-4">
@@ -169,7 +169,7 @@
  async function loadPatientHistory(){
   currentHistory=[];
   if(!selectedPatient){$('historyCount').textContent='0 records';$('historyList').innerHTML='<div class="rounded-xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-400">Select a patient to view previous prescriptions.</div>';return}
-  const {data,error}=await client.from('prescriptions').select('id,patient_id,patient_name,patient_phone,patient_age,patient_gender,diagnosis,medicines,medication_items,advice,clinical_notes,complaints,vitals,follow_up_date,created_at').eq('patient_id',selectedPatient.id||'00000000-0000-0000-0000-000000000000').order('created_at',{ascending:false}).limit(100);
+  const {data,error}=await client.from('prescriptions').select('id,patient_id,patient_name,patient_phone,patient_age,patient_gender,patient_allergies,diagnosis,medicines,medication_items,advice,clinical_notes,complaints,vitals,follow_up_date,created_at').eq('patient_id',selectedPatient.id||'00000000-0000-0000-0000-000000000000').order('created_at',{ascending:false}).limit(100);
   if(error){msg('globalError','Could not load patient history: '+error.message,true);return}
   currentHistory=data||[];
   if(!selectedPatient.id){currentHistory=recentPrescriptions.filter(function(r){return cleanPhone(r.patient_phone)===cleanPhone(selectedPatient.phone)})}
@@ -278,6 +278,7 @@
  }
  $('loginForm').addEventListener('submit',async function(e){e.preventDefault();if(!client){msg('loginError','Supabase configuration is missing.',true);return}msg('loginError','Signing in…',false);const result=await client.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(result.error){msg('loginError',result.error.message,true);return}await enter(result.data.session)});
  $('patientSearch').addEventListener('input',function(){renderPatients(this.value)});
+ $('patientSearchBtn').addEventListener('click',function(){renderPatients($('patientSearch').value)});
  $('patientResults').addEventListener('click',function(e){const pb=e.target.closest('[data-patient]');if(pb){const p=patients.find(function(x){return x.id===pb.dataset.patient});if(p)chooseSavedPatient(p);return}const ab=e.target.closest('[data-appointment]');if(ab){const a=appointments.find(function(x){return x.id===ab.dataset.appointment});if(a)chooseAppointment(a)}});
  $('appointmentList').addEventListener('click',function(e){const b=e.target.closest('[data-appointment]');if(!b)return;const a=appointments.find(function(x){return x.id===b.dataset.appointment});if(a)chooseAppointment(a)});
  $('appointmentSelect').addEventListener('change',function(){const a=appointments.find(function(x){return x.id===this.value});if(a)chooseAppointment(a);else selectedAppointment=null});
