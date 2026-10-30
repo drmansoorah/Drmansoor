@@ -31,6 +31,57 @@ drop index if exists public.appointments_patient_code_unique;
 create index if not exists appointments_patient_code_idx
   on public.appointments(patient_code) where patient_code is not null;
 
+-- Enforce credential immutability at database level, not just in the dashboard UI.
+create or replace function public.prevent_patient_portal_credential_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $immutable$
+begin
+  if tg_table_name = 'patients' then
+    if old.patient_code is not null and new.patient_code is distinct from old.patient_code
+       and current_user <> 'postgres' then
+      raise exception 'Patient ID is permanent and cannot be changed';
+    end if;
+    if (new.access_code_hash is distinct from old.access_code_hash
+        or new.access_code_ciphertext is distinct from old.access_code_ciphertext)
+       and current_user <> 'postgres' then
+      raise exception 'MindCare Access Code is permanent and cannot be changed';
+    end if;
+    if old.access_code_ciphertext is not null
+       and new.access_code_ciphertext is distinct from old.access_code_ciphertext then
+      raise exception 'MindCare Access Code is permanent and cannot be replaced';
+    end if;
+  elsif tg_table_name = 'appointments' then
+    if old.patient_code is not null and new.patient_code is distinct from old.patient_code
+       and current_user <> 'postgres' then
+      raise exception 'Patient ID is permanent and cannot be changed';
+    end if;
+    if (new.portal_access_hash is distinct from old.portal_access_hash
+        or new.portal_access_ciphertext is distinct from old.portal_access_ciphertext)
+       and current_user <> 'postgres' then
+      raise exception 'MindCare Access Code is permanent and cannot be changed';
+    end if;
+    if old.portal_access_ciphertext is not null
+       and new.portal_access_ciphertext is distinct from old.portal_access_ciphertext then
+      raise exception 'MindCare Access Code is permanent and cannot be replaced';
+    end if;
+  end if;
+  return new;
+end;
+$immutable$;
+
+drop trigger if exists trg_patient_portal_credentials_immutable on public.patients;
+create trigger trg_patient_portal_credentials_immutable
+before update on public.patients
+for each row execute function public.prevent_patient_portal_credential_change();
+
+drop trigger if exists trg_appointment_portal_credentials_immutable on public.appointments;
+create trigger trg_appointment_portal_credentials_immutable
+before update on public.appointments
+for each row execute function public.prevent_patient_portal_credential_change();
+
 create or replace function public._patient_portal_encryption_key()
 returns text
 language plpgsql
@@ -373,3 +424,7 @@ revoke all on function public.staff_get_patient_portal_credentials(text) from pu
 grant execute on function public.staff_get_patient_portal_credentials(text) to authenticated;
 
 revoke all on function public.activate_patient_portal_after_approval() from public;
+-- Remove the old reset-capable RPC so no dashboard/client can replace a saved code.
+drop function if exists public.doctor_set_patient_portal_code(uuid,text);
+
+revoke all on function public.prevent_patient_portal_credential_change() from public, anon, authenticated;
