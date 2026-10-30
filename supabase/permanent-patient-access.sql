@@ -302,7 +302,7 @@ declare
   v_i integer;
   v_alphabet constant text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 begin
-  if auth.uid() is null or (auth.jwt()->'app_metadata'->>'role') <> 'doctor' then
+  if auth.uid() is null or coalesce(auth.jwt()->'app_metadata'->>'role','') <> 'doctor' then
     raise exception 'Doctor access required';
   end if;
 
@@ -361,7 +361,7 @@ declare
   v_phone text;
 begin
   v_role := auth.jwt()->'app_metadata'->>'role';
-  if auth.uid() is null or v_role not in ('doctor','admin') then
+  if auth.uid() is null or coalesce(v_role,'') not in ('doctor','admin') then
     raise exception 'Doctor or admin access required';
   end if;
 
