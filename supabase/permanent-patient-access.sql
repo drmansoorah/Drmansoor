@@ -197,15 +197,15 @@ begin
 
   if not v_existing then
     v_access_code := '';
-    v_random := extensions.gen_random_bytes(7);
+    v_random := gen_random_bytes(7);
     for v_i in 0..6 loop
       v_access_code := v_access_code ||
         substr(v_alphabet, (get_byte(v_random,v_i) % length(v_alphabet)) + 1, 1);
     end loop;
     v_patient_code := public.generate_patient_portal_id();
-    v_hash := extensions.crypt(v_access_code, extensions.gen_salt('bf'));
+    v_hash := crypt(v_access_code, gen_salt('bf'));
     v_key := public._patient_portal_encryption_key();
-    v_cipher := extensions.pgp_sym_encrypt(v_access_code, v_key);
+    v_cipher := pgp_sym_encrypt(v_access_code, v_key);
   end if;
 
   insert into public.appointments(
@@ -317,7 +317,7 @@ begin
 
   if v_patient.access_code_ciphertext is null then
     v_code := '';
-    v_random := extensions.gen_random_bytes(7);
+    v_random := gen_random_bytes(7);
     for v_i in 0..6 loop
       v_code := v_code || substr(v_alphabet,(get_byte(v_random,v_i) % length(v_alphabet))+1,1);
     end loop;
@@ -325,8 +325,8 @@ begin
 
     update public.patients
     set patient_code = coalesce(patient_code,public.generate_patient_portal_id()),
-        access_code_hash = extensions.crypt(v_code,extensions.gen_salt('bf')),
-        access_code_ciphertext = extensions.pgp_sym_encrypt(v_code,v_key),
+        access_code_hash = crypt(v_code,gen_salt('bf')),
+        access_code_ciphertext = pgp_sym_encrypt(v_code,v_key),
         portal_access_enabled = true,
         portal_access_updated_at = now(),
         updated_at = now()
@@ -337,7 +337,7 @@ begin
   end if;
 
   v_key := public._patient_portal_encryption_key();
-  v_code := extensions.pgp_sym_decrypt(v_patient.access_code_ciphertext,v_key);
+  v_code := pgp_sym_decrypt(v_patient.access_code_ciphertext,v_key);
   return jsonb_build_object('patient_code',v_patient.patient_code,'access_code',v_code,'created',false);
 end;
 $issue$;
@@ -413,7 +413,7 @@ begin
   v_key := public._patient_portal_encryption_key();
   return jsonb_build_object(
     'patient_code',v_patient_code,
-    'access_code',extensions.pgp_sym_decrypt(v_cipher,v_key),
+    'access_code',pgp_sym_decrypt(v_cipher,v_key),
     'patient_name',v_name,
     'phone',v_phone
   );
