@@ -32,7 +32,7 @@ begin
  else
    perform setval('public.patient_portal_id_seq',1,false);
  end if;
-end $$;
+end; $$;
 
 -- Central ID generator: DRMAD001 ... DRMAD999, then DRMAD1000 and onward.
 create or replace function public.generate_patient_portal_id()
