@@ -131,7 +131,7 @@
   $('patientSummary').textContent='Selected patient: '+selectedPatient.full_name+' • '+selectedPatient.phone+(selectedPatient.age?' • '+selectedPatient.age+' years':'')+(selectedPatient.gender?' • '+selectedPatient.gender:'')+(selectedPatient.allergies?' • Allergies: '+selectedPatient.allergies:'')+(selectedPatient.patient_code?' • Patient ID: '+selectedPatient.patient_code:'');
  }
  function fillPatient(p,appointment){
-  selectedPatient=p?{id:p.id||null,full_name:p.full_name||p.patient_name||'',phone:p.phone||'',age:p.age||p.patient_age||'',gender:p.gender||p.patient_gender||'',allergies:p.allergies||'',date_of_birth:p.date_of_birth||'',patient_code:p.patient_code||''}:null;
+  selectedPatient=p?{id:p.id||null,full_name:p.full_name||p.patient_name||'',phone:p.phone||'',age:p.age||p.patient_age||'',gender:p.gender||p.patient_gender||'',allergies:p.allergies||'',date_of_birth:p.date_of_birth||'',patient_code:p.patient_code||'',portal_access_enabled:!!p.portal_access_enabled}:null;
   selectedAppointment=appointment||null;
   $('patientName').value=selectedPatient?selectedPatient.full_name:'';
   $('patientPhone').value=selectedPatient?selectedPatient.phone:'';
@@ -203,7 +203,7 @@
  function collectVitals(){const v={};[['BP',$('bp').value],['Pulse',$('pulse').value],['Weight',$('weight').value],['SpO2',$('spo2').value]].forEach(function(x){if(x[1].trim())v[x[0]]=x[1].trim()});return v}
  function medicinesAsText(meds){return meds.map(function(m,i){return (i+1)+'. '+m.name+(m.strength?' ('+m.strength+')':'')+' — '+[m.dose,m.frequency,m.duration].filter(Boolean).join(', ')}).join('\n')}
  async function ensurePatientRecord(p){
-  const payload={doctor_id:session.user.id,full_name:p.full_name,phone:p.phone,age:p.age,gender:p.gender,allergies:p.allergies||'',date_of_birth:p.date_of_birth};
+  const payload={doctor_id:session.user.id,full_name:p.full_name,phone:p.phone,age:p.age,gender:p.gender,allergies:p.allergies||'',date_of_birth:p.date_of_birth,portal_access_enabled:!!(selectedPatient&&selectedPatient.portal_access_enabled)};
   const {data,error}=await client.from('patients').upsert(payload,{onConflict:'doctor_id,phone'}).select('id,full_name,phone,age,gender,allergies,date_of_birth,patient_code,portal_access_enabled').single();
   if(error)throw error;
   return data;
