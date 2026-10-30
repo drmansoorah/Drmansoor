@@ -153,7 +153,7 @@
  async function loadData(){
   msg('globalError','',false);
   const results=await Promise.all([
-   client.from('appointments').select('id,patient_name,phone,clinic,concern,appointment_date,slot,status').eq('status','approved').order('appointment_date',{ascending:false}).limit(500),
+   client.from('appointments').select('id,patient_name,phone,clinic,concern,appointment_date,slot,status,patient_code,portal_access_enabled').eq('status','approved').order('appointment_date',{ascending:false}).limit(500),
    client.from('patients').select('id,full_name,phone,age,gender,allergies,patient_code,portal_access_enabled,created_at').order('created_at',{ascending:false}).limit(1000),
    client.from('prescriptions').select('id,patient_id,patient_name,patient_phone,patient_age,patient_gender,patient_allergies,diagnosis,medicines,medication_items,advice,clinical_notes,complaints,vitals,follow_up_date,created_at').order('created_at',{ascending:false}).limit(500)
   ]);
@@ -192,7 +192,7 @@
  }
  async function chooseAppointment(a){
   const existing=patients.find(function(p){return cleanPhone(p.phone)===cleanPhone(a.phone)});
-  const patient=existing||{full_name:a.patient_name,phone:a.phone};
+  const patient=existing||{full_name:a.patient_name,phone:a.phone,patient_code:a.patient_code||'',portal_access_enabled:!!a.portal_access_enabled};
   fillPatient(patient,a);
   $('patientSearch').value=a.patient_name;
   renderPatients(a.patient_name);
@@ -211,7 +211,7 @@
  function collectVitals(){const v={};[['BP',$('bp').value],['Pulse',$('pulse').value],['Weight',$('weight').value],['SpO2',$('spo2').value]].forEach(function(x){if(x[1].trim())v[x[0]]=x[1].trim()});return v}
  function medicinesAsText(meds){return meds.map(function(m,i){return (i+1)+'. '+m.name+(m.strength?' ('+m.strength+')':'')+' — '+[m.dose,m.frequency,m.duration].filter(Boolean).join(', ')}).join('\n')}
  async function ensurePatientRecord(p){
-  const payload={doctor_id:session.user.id,full_name:p.full_name,phone:p.phone,age:p.age,gender:p.gender,allergies:p.allergies||'',portal_access_enabled:!!(selectedPatient&&selectedPatient.portal_access_enabled)};
+  const payload={doctor_id:session.user.id,full_name:p.full_name,phone:p.phone,age:p.age,gender:p.gender,allergies:p.allergies||'',patient_code:selectedPatient&&selectedPatient.patient_code?selectedPatient.patient_code:undefined,portal_access_enabled:!!(selectedPatient&&selectedPatient.portal_access_enabled)};
   const {data,error}=await client.from('patients').upsert(payload,{onConflict:'doctor_id,phone'}).select('id,full_name,phone,age,gender,allergies,patient_code,portal_access_enabled').single();
   if(error)throw error;
   return data;
