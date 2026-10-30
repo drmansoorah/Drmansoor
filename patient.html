@@ -33,7 +33,7 @@ body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-ser
   <form id="lookupForm" class="space-y-3">
    <div><label class="label">Patient ID</label><input id="patientCode" class="field uppercase" autocomplete="off" required placeholder="Example: PT-XXXXXXXXXX"></div>
    
-   <div><label class="label">Private portal access code</label><input id="accessCode" type="password" class="field" autocomplete="off" minlength="24" maxlength="24" required placeholder="Enter the code provided with your Patient ID"></div>
+   <div><label class="label">Private portal access code</label><input id="accessCode" type="password" class="field" autocomplete="off" minlength="16" maxlength="24" required placeholder="Enter the code provided with your Patient ID"></div>
    <button id="lookupBtn" class="btn w-full">View my records</button>
   </form>
   <p class="text-[11px] leading-5 text-slate-500 mt-4">Keep your private access code confidential. Contact the clinic if you lose it.</p>
