@@ -279,9 +279,10 @@ begin
         portal_access_enabled = true,
         portal_access_updated_at = now(),
         updated_at = now()
-    where id = p_patient_id;
+    where id = p_patient_id
+    returning patient_code into v_patient.patient_code;
 
-    return jsonb_build_object('patient_code',coalesce(v_patient.patient_code,public.generate_patient_portal_id()),'access_code',v_code,'created',true);
+    return jsonb_build_object('patient_code',v_patient.patient_code,'access_code',v_code,'created',true);
   end if;
 
   v_key := public._patient_portal_encryption_key();
