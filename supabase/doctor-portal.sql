@@ -32,7 +32,7 @@ alter table public.prescriptions add column if not exists patient_id uuid refere
 alter table public.prescriptions add column if not exists patient_name text;
 alter table public.prescriptions add column if not exists patient_phone text;
 alter table public.prescriptions add column if not exists patient_age integer;
-alter table public.prescriptions add column if not exists patient_gender text;
+alter table public.prescriptions add column if not exists patient_gender text;\nalter table public.prescriptions add column if not exists patient_allergies text not null default '';
 alter table public.prescriptions add column if not exists medication_items jsonb not null default '[]'::jsonb;
 alter table public.prescriptions add column if not exists complaints text not null default '';
 alter table public.prescriptions add column if not exists clinical_notes text not null default '';
