@@ -71,7 +71,7 @@
      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
       <div class="sm:col-span-2"><label class="field-label">Patient full name *</label><input id="patientName" class="field" placeholder="Full name" required></div>
       <div><label class="field-label">Mobile number *</label><input id="patientPhone" class="field" inputmode="tel" placeholder="+91..." required></div>
-      <div><label class="field-label">Date of birth *</label><input id="patientDob" class="field" type="date" required></div><div><label class="field-label">Age</label><input id="patientAge" class="field" type="number" min="0" max="120" placeholder="Years"></div>
+      <div><label class="field-label">Age</label><input id="patientAge" class="field" type="number" min="0" max="120" placeholder="Years"></div>
       <div><label class="field-label">Gender</label><select id="patientGender" class="field"><option value="">Select</option><option>Female</option><option>Male</option><option>Other</option></select></div>
       <div class="sm:col-span-2"><label class="field-label">Allergies</label><input id="patientAllergies" class="field" placeholder="Drug / food allergy or None known"></div><div class="sm:col-span-2 rounded-lg bg-teal-50 border border-teal-100 px-3 py-2 text-xs text-teal-900"><b>Patient ID:</b> <span id="patientCodeDisplay">Generated when patient is saved</span> — share this ID with the patient for portal access.</div>
       <div class="sm:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
@@ -123,7 +123,7 @@
  }
  function clearMedicineRows(){$('medicineRows').innerHTML='';addMedicineRow()}
  function medicationData(){return Array.from($('medicineRows').querySelectorAll('.med-row')).map(function(row){return {name:row.querySelector('.med-name').value.trim(),strength:row.querySelector('[data-med="strength"]').value.trim(),dose:row.querySelector('[data-med="dose"]').value.trim(),frequency:row.querySelector('[data-med="frequency"]').value.trim(),duration:row.querySelector('[data-med="duration"]').value.trim()}}).filter(function(m){return m.name})}
- function makePortalCode(){const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';const bytes=new Uint8Array(16);if(!window.crypto||!window.crypto.getRandomValues)throw new Error('Secure random code generation is unavailable in this browser.');window.crypto.getRandomValues(bytes);return Array.from(bytes).map(function(b){return alphabet[b%alphabet.length]}).join('')}
+ function makePortalCode(){const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';const bytes=new Uint8Array(24);if(!window.crypto||!window.crypto.getRandomValues)throw new Error('Secure random code generation is unavailable in this browser.');window.crypto.getRandomValues(bytes);return Array.from(bytes).map(function(b){return alphabet[b%alphabet.length]}).join('')}
  function selectedPatientView(){
   if(!selectedPatient){$('patientStatus').textContent='No patient selected';$('patientStatus').className='badge bg-slate-100 text-slate-500';$('patientSummary').classList.add('hidden');return}
   $('patientStatus').textContent='Patient selected';$('patientStatus').className='badge bg-emerald-50 text-emerald-700';
@@ -131,22 +131,22 @@
   $('patientSummary').textContent='Selected patient: '+selectedPatient.full_name+' • '+selectedPatient.phone+(selectedPatient.age?' • '+selectedPatient.age+' years':'')+(selectedPatient.gender?' • '+selectedPatient.gender:'')+(selectedPatient.allergies?' • Allergies: '+selectedPatient.allergies:'')+(selectedPatient.patient_code?' • Patient ID: '+selectedPatient.patient_code:'');
  }
  function fillPatient(p,appointment){
-  selectedPatient=p?{id:p.id||null,full_name:p.full_name||p.patient_name||'',phone:p.phone||'',age:p.age||p.patient_age||'',gender:p.gender||p.patient_gender||'',allergies:p.allergies||'',date_of_birth:p.date_of_birth||'',patient_code:p.patient_code||'',portal_access_enabled:!!p.portal_access_enabled}:null;
+  selectedPatient=p?{id:p.id||null,full_name:p.full_name||p.patient_name||'',phone:p.phone||'',age:p.age||p.patient_age||'',gender:p.gender||p.patient_gender||'',allergies:p.allergies||'',patient_code:p.patient_code||'',portal_access_enabled:!!p.portal_access_enabled}:null;
   selectedAppointment=appointment||null;
   $('patientName').value=selectedPatient?selectedPatient.full_name:'';
   $('patientPhone').value=selectedPatient?selectedPatient.phone:'';
   $('patientAge').value=selectedPatient?selectedPatient.age:'';
   $('patientGender').value=selectedPatient?selectedPatient.gender:'';
-  $('patientAllergies').value=selectedPatient?selectedPatient.allergies:'';$('patientDob').value=selectedPatient?selectedPatient.date_of_birth:'';$('patientCodeDisplay').textContent=selectedPatient&&selectedPatient.patient_code?selectedPatient.patient_code:'Generated when patient is saved';$('portalAccessCode').value='';$('portalCodeMessage').textContent=selectedPatient&&selectedPatient.portal_access_enabled?'A private portal code is already active. Generate/reset only if you need to issue a new code.':'No portal code set yet. Generate a code before or while saving a prescription.';
+  $('patientAllergies').value=selectedPatient?selectedPatient.allergies:'';$('patientCodeDisplay').textContent=selectedPatient&&selectedPatient.patient_code?selectedPatient.patient_code:'Generated when patient is saved';$('portalAccessCode').value='';$('portalCodeMessage').textContent=selectedPatient&&selectedPatient.portal_access_enabled?'A private portal code is already active. Generate/reset only if you need to issue a new code.':'No portal code set yet. Generate a code before or while saving a prescription.';
   $('appointmentSelect').value=appointment?appointment.id:'';
   selectedPatientView();loadPatientHistory();
  }
- function patientIdentityFromForm(){return {id:selectedPatient&&selectedPatient.id,full_name:$('patientName').value.trim(),phone:cleanPhone($('patientPhone').value),age:$('patientAge').value?Number($('patientAge').value):null,gender:$('patientGender').value,allergies:$('patientAllergies').value.trim(),date_of_birth:$('patientDob').value}}
+ function patientIdentityFromForm(){return {id:selectedPatient&&selectedPatient.id,full_name:$('patientName').value.trim(),phone:cleanPhone($('patientPhone').value),age:$('patientAge').value?Number($('patientAge').value):null,gender:$('patientGender').value,allergies:$('patientAllergies').value.trim()}}
  async function loadData(){
   msg('globalError','',false);
   const results=await Promise.all([
    client.from('appointments').select('id,patient_name,phone,clinic,concern,appointment_date,slot,status').eq('status','approved').order('appointment_date',{ascending:false}).limit(500),
-   client.from('patients').select('id,full_name,phone,age,gender,allergies,date_of_birth,patient_code,portal_access_enabled,created_at').order('created_at',{ascending:false}).limit(1000),
+   client.from('patients').select('id,full_name,phone,age,gender,allergies,patient_code,portal_access_enabled,created_at').order('created_at',{ascending:false}).limit(1000),
    client.from('prescriptions').select('id,patient_id,patient_name,patient_phone,patient_age,patient_gender,patient_allergies,diagnosis,medicines,medication_items,advice,clinical_notes,complaints,vitals,follow_up_date,created_at').order('created_at',{ascending:false}).limit(500)
   ]);
   const ap=results[0],pt=results[1],rx=results[2];
@@ -191,7 +191,7 @@
  }
  function clearFormForNewPatient(){
   selectedPatient=null;selectedAppointment=null;
-  $('patientName').value='';$('patientPhone').value='';$('patientAge').value='';$('patientGender').value='';$('patientAllergies').value='';$('patientDob').value='';$('patientCodeDisplay').textContent='Generated when patient is saved';$('appointmentSelect').value='';$('portalAccessCode').value='';$('portalCodeMessage').textContent='Generate a private code; it will be stored when you save the prescription.';
+  $('patientName').value='';$('patientPhone').value='';$('patientAge').value='';$('patientGender').value='';$('patientAllergies').value='';$('patientCodeDisplay').textContent='Generated when patient is saved';$('appointmentSelect').value='';$('portalAccessCode').value='';$('portalCodeMessage').textContent='Generate a private code; it will be stored when you save the prescription.';
   $('diagnosis').value='';$('complaints').value='';$('advice').value='';$('followup').value='';$('reviewNote').value='';
   $('bp').value='';$('pulse').value='';$('weight').value='';$('spo2').value='';clearMedicineRows();selectedPatientView();loadPatientHistory();$('patientName').focus();
  }
@@ -203,8 +203,8 @@
  function collectVitals(){const v={};[['BP',$('bp').value],['Pulse',$('pulse').value],['Weight',$('weight').value],['SpO2',$('spo2').value]].forEach(function(x){if(x[1].trim())v[x[0]]=x[1].trim()});return v}
  function medicinesAsText(meds){return meds.map(function(m,i){return (i+1)+'. '+m.name+(m.strength?' ('+m.strength+')':'')+' — '+[m.dose,m.frequency,m.duration].filter(Boolean).join(', ')}).join('\n')}
  async function ensurePatientRecord(p){
-  const payload={doctor_id:session.user.id,full_name:p.full_name,phone:p.phone,age:p.age,gender:p.gender,allergies:p.allergies||'',date_of_birth:p.date_of_birth,portal_access_enabled:!!(selectedPatient&&selectedPatient.portal_access_enabled)};
-  const {data,error}=await client.from('patients').upsert(payload,{onConflict:'doctor_id,phone'}).select('id,full_name,phone,age,gender,allergies,date_of_birth,patient_code,portal_access_enabled').single();
+  const payload={doctor_id:session.user.id,full_name:p.full_name,phone:p.phone,age:p.age,gender:p.gender,allergies:p.allergies||'',portal_access_enabled:!!(selectedPatient&&selectedPatient.portal_access_enabled)};
+  const {data,error}=await client.from('patients').upsert(payload,{onConflict:'doctor_id,phone'}).select('id,full_name,phone,age,gender,allergies,patient_code,portal_access_enabled').single();
   if(error)throw error;
   return data;
  }
@@ -212,7 +212,7 @@
   e.preventDefault();
   if(!session)return;
   const p=patientIdentityFromForm();
-  if(!p.full_name||!p.phone||!p.date_of_birth){msg('formMessage','Patient name, mobile number and date of birth are required for Patient Portal access.',true);return}
+  if(!p.full_name||!p.phone){msg('formMessage','Patient name and mobile number are required.',true);return}
   const diagnosis=$('diagnosis').value.trim();
   if(!diagnosis){msg('formMessage','Please enter the diagnosis / clinical impression.',true);return}
   const meds=medicationData();
@@ -226,7 +226,7 @@
     const {error:portalError}=await client.rpc('doctor_set_patient_portal_code',{p_patient_id:patient.id,p_access_code:portalCode});
     if(portalError)throw portalError;
     patient.portal_access_enabled=true;
-    $('portalCodeMessage').textContent='Portal access code saved. Share this code privately with the patient along with Patient ID and date of birth. It is shown here only for you to provide securely.';
+    $('portalCodeMessage').textContent='Portal access code saved. Share this code privately with the patient along with Patient ID. It is shown here only for you to provide securely.';
    }
    $('patientCodeDisplay').textContent=patient.patient_code||'Created';
    const vitals=collectVitals();
