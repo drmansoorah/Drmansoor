@@ -17,7 +17,7 @@ alter table public.patients add column if not exists portal_access_updated_at ti
 
 -- Sequential patient ID generator. Example: DRMAD001, DRMAD002, DRMAD003...
 create sequence if not exists public.patient_portal_id_seq start with 1;
-do $$
+do $do$
 declare
  v_max bigint;
 begin
@@ -32,22 +32,23 @@ begin
  else
    perform setval('public.patient_portal_id_seq',1,false);
  end if;
-end; $$;
+end;
+$do$;
 
 -- Central ID generator: DRMAD001 ... DRMAD999, then DRMAD1000 and onward.
 create or replace function public.generate_patient_portal_id()
 returns text
-language plpgsql
-volatile
-security definer
-set search_path = public, pg_temp
-as $$
+AS $fn$
 declare v_id bigint;
 begin
  v_id:=nextval('public.patient_portal_id_seq');
  return 'DRMAD' || case when v_id<1000 then lpad(v_id::text,3,'0') else v_id::text end;
 end;
-$$;
+$fn$
+language plpgsql
+volatile
+security definer
+set search_path = public, pg_temp;
 revoke all on function public.generate_patient_portal_id() from public;
 grant execute on function public.generate_patient_portal_id() to authenticated;
 
@@ -96,9 +97,8 @@ create or replace function public.request_patient_appointment(
  p_patient_name text,p_phone text,p_clinic text,p_concern text,
  p_appointment_date date,p_slot text,p_communication_consent boolean
 )
-returns jsonb language plpgsql security definer
-set search_path = public, extensions, pg_temp
-as $$
+returns jsonb
+AS $fn$
 declare
  v_patient_code text;
  v_access_code text := '';
@@ -150,16 +150,18 @@ begin
   'portal_access_enabled',false
  );
 end;
-$$;
+$fn$
+language plpgsql
+security definer
+set search_path = public, extensions, pg_temp;
 
 revoke all on function public.request_patient_appointment(text,text,text,text,date,text,boolean) from public;
 grant execute on function public.request_patient_appointment(text,text,text,text,date,text,boolean) to anon,authenticated;
 
 -- Only clinician approval activates the issued credentials and creates the patient row.
 create or replace function public.activate_patient_portal_after_approval()
-returns trigger language plpgsql security definer
-set search_path = public, extensions, pg_temp
-as $$
+returns trigger
+AS $fn$
 declare v_doctor_id uuid;
 begin
  if new.status='approved' and old.status is distinct from new.status
@@ -183,7 +185,10 @@ begin
  end if;
  return new;
 end;
-$$;
+$fn$
+language plpgsql
+security definer
+set search_path = public, extensions, pg_temp;
 
 drop trigger if exists trg_activate_patient_portal_after_approval on public.appointments;
 create trigger trg_activate_patient_portal_after_approval
@@ -192,9 +197,8 @@ for each row execute function public.activate_patient_portal_after_approval();
 
 -- Doctors can issue/reset a 7-character MindCare code for walk-in patients.
 create or replace function public.doctor_set_patient_portal_code(p_patient_id uuid,p_access_code text)
-returns boolean language plpgsql security definer
-set search_path = public, extensions, pg_temp
-as $$
+returns boolean
+AS $fn$
 begin
  if auth.uid() is null or (auth.jwt()->'app_metadata'->>'role')<>'doctor' then
   raise exception 'Doctor access required';
@@ -208,14 +212,16 @@ begin
  if not found then raise exception 'Patient record not found for this doctor'; end if;
  return true;
 end;
-$$;
+$fn$
+language plpgsql
+security definer
+set search_path = public, extensions, pg_temp;
 
 -- Patient lookup: Patient ID + 7-character code. Five failed attempts per ID
 -- are allowed in a 15-minute window; further attempts are paused for 15 minutes.
 create or replace function public.patient_portal_lookup(p_patient_code text,p_access_code text)
-returns jsonb language plpgsql security definer
-set search_path = public, extensions, pg_temp
-as $$
+returns jsonb
+AS $fn$
 declare
  v_patient public.patients%rowtype;
  v_prescriptions jsonb;
@@ -278,7 +284,10 @@ begin
   'age',v_patient.age,'gender',v_patient.gender,'allergies',v_patient.allergies
  ),'prescriptions',v_prescriptions);
 end;
-$$;
+$fn$
+language plpgsql
+security definer
+set search_path = public, extensions, pg_temp;
 
 revoke all on function public.activate_patient_portal_after_approval() from public;
 revoke all on function public.doctor_set_patient_portal_code(uuid,text) from public;
