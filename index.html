@@ -960,20 +960,19 @@
       submitBtn.classList.add('opacity-60', 'cursor-not-allowed');
       submitBtn.querySelector('span').textContent = 'Submitting request…';
       try {
-        const { data, error } = await supabaseClient
-          .from('appointments')
-          .insert({
-            patient_name: name,
-            phone: phone,
-            clinic: clinic,
-            concern: concern,
-            appointment_date: date,
-            slot: slot,
-            communication_consent: true,
-            status: 'pending'
-          });
-
+        const { data, error } = await supabaseClient.rpc('request_patient_appointment', {
+          p_patient_name: name,
+          p_phone: phone,
+          p_clinic: clinic,
+          p_concern: concern,
+          p_appointment_date: date,
+          p_slot: slot,
+          p_communication_consent: true
+        });
         if (error) throw error;
+        if (!data || !data.patient_code || !data.portal_access_code) {
+          throw new Error('Patient ID and access code could not be generated. Please contact the clinic desk.');
+        }
 
         const resultCard = document.getElementById('bookingResultCard');
         const summaryText = document.getElementById('receiptSummaryText');
@@ -983,7 +982,13 @@
           <strong>Clinic:</strong> ${escapeHtml(clinic)}<br>
           <strong>Requested date:</strong> ${escapeHtml(date)}<br>
           <strong>Preferred slot:</strong> ${escapeHtml(slot)}<br><br>
-          <strong>Status: Pending clinic approval.</strong> This is a request, not a confirmed appointment. The clinic will contact you after reviewing it.
+          <div class="rounded-xl border border-teal-200 bg-white p-4 text-left space-y-2">
+            <p class="font-extrabold text-teal-900">Your Patient Portal credentials</p>
+            <p><strong>Patient ID:</strong> <span class="font-mono font-bold">${escapeHtml(data.patient_code)}</span></p>
+            <p><strong>Private Access Code:</strong> <span class="font-mono font-bold">${escapeHtml(data.portal_access_code)}</span></p>
+            <p class="text-xs text-slate-600">Save these details now. Your Patient Portal remains locked until the clinician approves your appointment. After approval, use these credentials to access your records.</p>
+          </div>
+          <br><strong>Status: Pending clinic approval.</strong> This is a request, not a confirmed appointment.
         `;
         const waMsg = encodeURIComponent('Assalam o Alaikum, I have submitted an appointment request. Please let me know when it has been reviewed.');
         whatsappBtn.href = `https://wa.me/919906927006?text=${waMsg}`;
