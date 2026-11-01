@@ -23,10 +23,9 @@ set clinic_key = case
 end
 where clinic_key is null or btrim(clinic_key) = '';
 
--- Replace the old public-facing ExpectCare label with the editable clinic name.
-update public.appointments
-set clinic = 'Mansoor Psychiatry & MindCare Clinic'
-where clinic ilike '%ExpectCare%';
+-- Keep existing appointment clinic text unchanged: historical appointment dates
+-- may be protected by appointments_appointment_date_check. The clinic_key column
+-- is sufficient for dashboard routing; new bookings store the current clinic name.
 
 alter table public.appointments
   alter column clinic_key set default 'south-kashmir',
