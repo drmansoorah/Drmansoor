@@ -4,6 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Prof. (Dr.) Mansoor Ahmad | Professor & HOD Psychiatry, GMC Anantnag</title>
+  <script>
+    (function () {
+      var query = new URLSearchParams(window.location.search);
+      var hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+      var authType = query.get("type") || hash.get("type");
+      var hasAuthToken = !!(
+        query.get("token_hash") || hash.get("access_token") ||
+        hash.get("refresh_token") || hash.get("error_code")
+      );
+      if (hasAuthToken && (authType === "invite" || authType === "recovery")) {
+        window.location.replace("/set-password.html" + window.location.search + window.location.hash);
+      }
+    })();
+  </script>
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
