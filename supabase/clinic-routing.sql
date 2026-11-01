@@ -60,13 +60,19 @@ begin
 
     new.clinic_key := v_key;
     new.clinic := v_label;
-  elsif tg_op = 'INSERT' or new.clinic is distinct from old.clinic then
+  elsif tg_op = 'INSERT' then
     if new.clinic ilike '%GMC%' then
       new.clinic_key := 'gmc-anantnag';
     elsif new.clinic ilike '%ExpectCare%' or new.clinic ilike '%Cheeni Chowk%' then
       new.clinic_key := 'mansoor-private';
     elsif coalesce(new.clinic_key, '') not in ('mansoor-private', 'gmc-anantnag', 'south-kashmir') then
       new.clinic_key := 'south-kashmir';
+    end if;
+  elsif new.clinic is distinct from old.clinic then
+    if new.clinic ilike '%GMC%' then
+      new.clinic_key := 'gmc-anantnag';
+    elsif new.clinic ilike '%ExpectCare%' or new.clinic ilike '%Cheeni Chowk%' then
+      new.clinic_key := 'mansoor-private';
     end if;
   end if;
 
