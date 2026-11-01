@@ -2,6 +2,7 @@
 -- Run AFTER clinic-routing.sql and permanent-patient-access.sql.
 -- Clinic-scoped admin accounts remain excluded from patient and prescription records.
 
+drop policy if exists "Master admin reads all patients" on public.patients;
 create policy "Master admin reads all patients"
 on public.patients
 for select
@@ -11,6 +12,7 @@ using (
   and coalesce(nullif(auth.jwt() -> 'app_metadata' ->> 'clinic_key', ''), '*') = '*'
 );
 
+drop policy if exists "Master admin creates own patients" on public.patients;
 create policy "Master admin creates own patients"
 on public.patients
 for insert
@@ -21,6 +23,7 @@ with check (
   and doctor_id = auth.uid()
 );
 
+drop policy if exists "Master admin updates all patients" on public.patients;
 create policy "Master admin updates all patients"
 on public.patients
 for update
@@ -34,6 +37,7 @@ with check (
   and coalesce(nullif(auth.jwt() -> 'app_metadata' ->> 'clinic_key', ''), '*') = '*'
 );
 
+drop policy if exists "Master admin reads all prescriptions" on public.prescriptions;
 create policy "Master admin reads all prescriptions"
 on public.prescriptions
 for select
@@ -43,6 +47,7 @@ using (
   and coalesce(nullif(auth.jwt() -> 'app_metadata' ->> 'clinic_key', ''), '*') = '*'
 );
 
+drop policy if exists "Master admin creates prescriptions" on public.prescriptions;
 create policy "Master admin creates prescriptions"
 on public.prescriptions
 for insert
@@ -64,6 +69,7 @@ with check (
   )
 );
 
+drop policy if exists "Master admin updates all prescriptions" on public.prescriptions;
 create policy "Master admin updates all prescriptions"
 on public.prescriptions
 for update
