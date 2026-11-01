@@ -6,11 +6,12 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./config.js"></script>
+  <script src="./clinics.js"></script>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen">
   <main class="max-w-6xl mx-auto px-4 py-8">
     <header class="flex flex-wrap items-center justify-between gap-3 mb-8">
-      <div><p class="text-teal-700 text-xs font-bold uppercase tracking-widest">ExpectCare • GMC Anantnag</p><h1 class="text-2xl sm:text-3xl font-bold mt-1">Appointment Admin</h1><p class="text-sm text-slate-500 mt-1">Sign in with an administrator account to manage requests.</p></div>
+      <div><p class="text-teal-700 text-xs font-bold uppercase tracking-widest">Dr Mansoor Clinics • Administration</p><h1 class="text-2xl sm:text-3xl font-bold mt-1">Appointment Admin</h1><p class="text-sm text-slate-500 mt-1">Each clinic administrator sees only the appointments assigned to their clinic.</p></div>
       <a href="./index.html" class="text-sm font-semibold text-teal-700 hover:underline">← View website</a>
     </header>
 
@@ -25,6 +26,12 @@
     </section>
 
     <section id="dashboardPanel" class="hidden">
+      <div id="clinicScopeCard" class="bg-white border border-slate-200 rounded-xl p-4 mb-4">
+        <p class="text-[10px] uppercase tracking-widest font-extrabold text-teal-700">Assigned clinic</p>
+        <h2 id="clinicAdminName" class="text-lg font-extrabold text-slate-900 mt-1">All clinics</h2>
+        <p id="clinicAdminAddress" class="text-xs text-slate-500 mt-1"></p>
+        <p id="clinicAdminPhone" class="text-xs text-slate-600 mt-1"></p>
+      </div>
       <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
         <p id="welcomeText" class="text-sm text-slate-600"></p>
         <div class="flex gap-2"><button id="refreshBtn" class="rounded-lg bg-white border border-slate-300 px-3 py-2 text-sm font-semibold">Refresh</button><button id="logoutBtn" class="rounded-lg bg-slate-800 text-white px-3 py-2 text-sm font-semibold">Sign out</button></div>
@@ -47,22 +54,38 @@
   const client = configured ? window.supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.anonKey) : null;
   const $ = id => document.getElementById(id);
   let appointments = [];
+  const clinicDirectory = Array.isArray(window.CLINIC_CONFIG) ? window.CLINIC_CONFIG : [];
+  let currentClinicKey = '*';
+  let currentClinic = null;
   function safe(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
   function showError(msg) { $('dashboardError').textContent = msg || ''; }
   async function ensureAdmin(session) {
-    if (!session || session.user?.app_metadata?.role !== 'admin') {
+    const meta = session && session.user ? (session.user.app_metadata || {}) : {};
+    if (!session || meta.role !== 'admin') {
       $('loginPanel').classList.remove('hidden'); $('dashboardPanel').classList.add('hidden');
-      if (session) $('loginError').textContent = 'This account does not have the admin role. Ask the project owner to grant it in Supabase, then sign out and back in.';
+      if (session) $('loginError').textContent = 'This account does not have the admin role. Ask the project owner to grant role=admin in Supabase Auth.';
+      return false;
+    }
+    currentClinicKey = meta.clinic_key || '*';
+    currentClinic = currentClinicKey === '*' ? null : clinicDirectory.find(x => x.key === currentClinicKey);
+    if (currentClinicKey !== '*' && !currentClinic) {
+      $('loginPanel').classList.remove('hidden'); $('dashboardPanel').classList.add('hidden');
+      $('loginError').textContent = 'This admin account has an unknown clinic_key. Ask the project owner to check Supabase app_metadata.';
       return false;
     }
     $('loginPanel').classList.add('hidden'); $('dashboardPanel').classList.remove('hidden');
-    $('welcomeText').textContent = 'Signed in as ' + session.user.email;
+    $('welcomeText').textContent = 'Signed in as ' + session.user.email + (currentClinic ? ' • ' + currentClinic.name : ' • Master admin');
+    $('clinicAdminName').textContent = currentClinic ? currentClinic.name : 'Master administrator — all clinics';
+    $('clinicAdminAddress').textContent = currentClinic ? currentClinic.address : 'You can view appointments from all three clinics.';
+    $('clinicAdminPhone').textContent = currentClinic ? (currentClinic.phoneLabel || 'Clinic contact to be configured') : 'Clinic contacts are managed in clinics.js';
     await loadAppointments(); return true;
   }
   async function loadAppointments() {
     if (!client) { showError('Supabase is not configured. Edit config.js first.'); return; }
     showError('');
-    const {data, error} = await client.from('appointments').select('id,patient_name,phone,clinic,concern,appointment_date,slot,status,patient_code,created_at,decision_at,notification_status').order('created_at', {ascending:false}).limit(500);
+    let query = client.from('appointments').select('id,patient_name,phone,clinic,clinic_key,concern,appointment_date,slot,status,patient_code,created_at,decision_at,notification_status').order('created_at', {ascending:false});
+    if (currentClinicKey !== '*') query = query.eq('clinic_key', currentClinicKey);
+    const {data, error} = await query.limit(500);
     if (error) { showError('Could not load appointments: ' + error.message); return; }
     appointments = data || [];
     $('pendingCount').textContent = appointments.filter(x=>x.status==='pending').length;
@@ -81,6 +104,13 @@
     if (!confirm(confirmation)) return;
     button.disabled = true; button.textContent = 'Working…'; showError('');
     try {
+      const appointment = appointments.find(x => x.id === id);
+      if (!appointment || (currentClinicKey !== '*' && appointment.clinic_key !== currentClinicKey)) {
+        throw new Error('This appointment is not assigned to your clinic dashboard.');
+      }
+      const {data:allowed,error:scopeError} = await client.rpc('admin_can_access_appointment',{p_appointment_id:id});
+      if (scopeError) throw scopeError;
+      if (!allowed) throw new Error('You do not have access to this clinic appointment.');
       const {data:{session}} = await client.auth.getSession();
       const response = await fetch(window.SUPABASE_CONFIG.url + '/functions/v1/appointment-decision', {method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token,'apikey':window.SUPABASE_CONFIG.anonKey}, body:JSON.stringify({appointment_id:id, action})});
       const result = await response.json().catch(()=>({}));
