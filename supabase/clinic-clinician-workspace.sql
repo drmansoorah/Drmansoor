@@ -52,6 +52,7 @@ to authenticated
 with check (
   (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
   and clinic_key = auth.jwt() -> 'app_metadata' ->> 'clinic_key'
+  and clinic_key in ('mansoor-private','gmc-anantnag','south-kashmir')
 );
 
 drop policy if exists "Clinic clinicians update assigned patients" on public.patients;
@@ -110,10 +111,12 @@ to authenticated
 using (
   (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
   and clinic_key = auth.jwt() -> 'app_metadata' ->> 'clinic_key'
+  and clinic_key in ('mansoor-private','gmc-anantnag','south-kashmir')
 )
 with check (
   (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
   and clinic_key = auth.jwt() -> 'app_metadata' ->> 'clinic_key'
+  and clinic_key in ('mansoor-private','gmc-anantnag','south-kashmir')
   and exists (
     select 1
     from public.patients p
