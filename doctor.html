@@ -97,7 +97,7 @@
      <section class="panel p-5">
       <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 border-b border-slate-100 pb-4 mb-4">
        <div><p class="text-[10px] uppercase tracking-[.15em] text-teal-700 font-extrabold">Selected patient</p><h3 id="profileName" class="text-xl font-extrabold mt-1 text-slate-900">Patient</h3><p id="profileMeta" class="text-xs text-slate-500 mt-1"></p></div>
-       <div class="flex gap-2 flex-wrap"><span id="patientStatus" class="badge bg-emerald-50 text-emerald-700">Selected</span><button id="writePrescriptionBtn" type="button" class="btn-primary">＋ Write a Prescription</button></div>
+       <div class="flex gap-2 flex-wrap"><span id="patientStatus" class="badge bg-emerald-50 text-emerald-700">Selected</span><button id="editPatientBtn" type="button" class="btn-muted">Edit details</button><button id="writePrescriptionBtn" type="button" class="btn-primary">＋ Write a Prescription</button></div>
       </div>
       <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
        <div><p class="info-label">Mobile</p><p id="profilePhone" class="info-value">—</p></div>
@@ -106,6 +106,17 @@
        <div class="sm:col-span-2 lg:col-span-3"><p class="info-label">Allergies</p><p id="profileAllergies" class="info-value">Not recorded</p></div>
        <div class="sm:col-span-2 lg:col-span-3"><p class="info-label">Clinic</p><p id="profileClinic" class="info-value">—</p></div>
       </div>
+      <section id="patientEditPanel" class="hidden mt-4 rounded-xl border border-teal-100 bg-teal-50/50 p-4">
+       <form id="patientEditForm" class="grid sm:grid-cols-2 gap-3">
+        <div class="sm:col-span-2"><p class="text-sm font-extrabold text-slate-800">Edit patient details</p><p class="text-xs text-slate-500 mt-1">Patient ID and permanent access code will remain unchanged.</p></div>
+        <div><label class="field-label">Full name</label><input id="editPatientName" class="field" required maxlength="100"></div>
+        <div><label class="field-label">Mobile number</label><input id="editPatientPhone" class="field" required inputmode="tel"></div>
+        <div><label class="field-label">Age</label><input id="editPatientAge" class="field" type="number" min="0" max="120"></div>
+        <div><label class="field-label">Gender</label><select id="editPatientGender" class="field"><option value="">Select</option><option>Female</option><option>Male</option><option>Other</option></select></div>
+        <div class="sm:col-span-2"><label class="field-label">Allergies</label><input id="editPatientAllergies" class="field" placeholder="Drug / food allergy or None known"></div>
+        <div class="sm:col-span-2 flex flex-wrap items-center justify-between gap-2"><p id="patientEditMessage" class="text-xs text-slate-500"></p><div class="flex gap-2"><button id="cancelPatientEdit" type="button" class="btn-muted">Cancel</button><button id="savePatientEdit" class="btn-primary">Save details</button></div></div>
+       </form>
+      </section>
       <div class="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2"><div><p class="text-xs font-extrabold text-slate-800">Permanent MindCare Access Code</p><p id="portalCodeMessage" class="text-[11px] text-slate-500 mt-1">Code is created once and retained for the patient.</p></div><div class="flex gap-2"><input id="portalAccessCode" class="field bg-white font-mono tracking-wider max-w-[145px]" readonly placeholder="Not loaded"><button type="button" id="generatePortalCode" class="btn-soft whitespace-nowrap">View / Generate once</button></div></div>
       </div>
@@ -328,6 +339,35 @@
   if(error)throw error;
   return data;
  }
+ function openPatientEditor(){
+  if(!selectedPatient)return;
+  $('editPatientName').value=selectedPatient.full_name||'';
+  $('editPatientPhone').value=selectedPatient.phone||'';
+  $('editPatientAge').value=selectedPatient.age||'';
+  $('editPatientGender').value=selectedPatient.gender||'';
+  $('editPatientAllergies').value=selectedPatient.allergies||'';
+  msg('patientEditMessage','',false);
+  $('patientEditPanel').classList.remove('hidden');
+  $('editPatientName').focus();
+ }
+ async function savePatientProfile(e){
+  e.preventDefault();
+  if(!selectedPatient||!session)return;
+  const p={full_name:$('editPatientName').value.trim(),phone:cleanPhone($('editPatientPhone').value),age:$('editPatientAge').value?Number($('editPatientAge').value):null,gender:$('editPatientGender').value,allergies:$('editPatientAllergies').value.trim()};
+  if(p.full_name.length<2||p.phone.length<10){msg('patientEditMessage','Enter a valid name and mobile number.',true);return}
+  const btn=$('savePatientEdit');btn.disabled=true;btn.textContent='Saving…';
+  try{
+   let base=selectedPatient;
+   if(!base.id)base=await ensurePatientRecord({full_name:selectedPatient.full_name,phone:selectedPatient.phone,age:selectedPatient.age||null,gender:selectedPatient.gender||'',allergies:selectedPatient.allergies||''});
+   const {data,error}=await client.from('patients').update({full_name:p.full_name,phone:p.phone,age:p.age,gender:p.gender,allergies:p.allergies,clinic_key:selectedClinicKey,updated_at:new Date().toISOString()}).eq('id',base.id).eq('clinic_key',selectedClinicKey).select('id,doctor_id,clinic_key,full_name,phone,age,gender,allergies,patient_code,portal_access_enabled').single();
+   if(error)throw error;
+   selectedPatient=Object.assign({},selectedPatient,data);
+   $('patientEditPanel').classList.add('hidden');
+   await loadData();
+   msg('globalError','Patient details updated. Permanent Patient ID and access code were preserved.',false);
+  }catch(err){msg('patientEditMessage','Could not update patient: '+(err.message||'Unknown error'),true)}
+  finally{btn.disabled=false;btn.textContent='Save details'}
+ }
  function resetPrescriptionForm(){
   $('prescriptionForm').reset();clearMedicineRows();$('portalAccessCode').value='';
   $('formMessage').textContent='Prescription will be saved to this patient’s clinical history.';
@@ -351,7 +391,7 @@
   const diagnosis=$('diagnosis').value.trim();
   if(!diagnosis){msg('formMessage','Please enter the diagnosis / clinical impression.',true);return}
   const meds=medicationData();
-  if(!meds.length){msg('formMessage','Add at least one medicine before saving the prescription.',true);return}
+// Medication is optional: save diagnosis, counselling and review notes even when no drug is prescribed.
   const btn=$('savePrescription');btn.disabled=true;btn.textContent='Saving prescription…';msg('formMessage','Saving secure clinical record…',false);
   try{
    const patient=await ensurePatientRecord(p);
@@ -469,6 +509,9 @@
  });
  $('cancelNewPatient').addEventListener('click',()=>$('patientEntryPanel').classList.add('hidden'));
  $('newPatientForm').addEventListener('submit',saveNewPatient);
+ $('editPatientBtn').addEventListener('click',openPatientEditor);
+ $('patientEditForm').addEventListener('submit',savePatientProfile);
+ $('cancelPatientEdit').addEventListener('click',()=>$('patientEditPanel').classList.add('hidden'));
  $('writePrescriptionBtn').addEventListener('click',openPrescriptionEditor);
  $('cancelPrescription').addEventListener('click',()=>$('prescriptionForm').classList.add('hidden'));
  $('generatePortalCode').addEventListener('click',async function(){
