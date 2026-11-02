@@ -163,7 +163,7 @@
  const client=window.supabase&&cfg&&cfg.url&&cfg.anonKey?window.supabase.createClient(cfg.url,cfg.anonKey):null;
  const $=id=>document.getElementById(id);
  const clinicDirectory=Array.isArray(window.CLINIC_CONFIG)?window.CLINIC_CONFIG:[];
- let session=null,appointments=[],patients=[],recentPrescriptions=[],selectedPatient=null,selectedAppointment=null,currentHistory=[],clinicPatients=[],selectedClinicKey=clinicDirectory[0]?.key||'',assignedClinicKey='',isClinicAdmin=false;
+ let session=null,appointments=[],patients=[],recentPrescriptions=[],selectedPatient=null,selectedAppointment=null,currentHistory=[],clinicPatients=[],selectedClinicKey=clinicDirectory[0]?.key||'';
  const todayISO=new Date().toISOString().slice(0,10);
  $('todayLabel').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long',year:'numeric'});
  const safe=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -173,10 +173,9 @@
  const samePatient=(a,b)=>!!(a&&b&&((a.patient_code&&b.patient_code&&a.patient_code===b.patient_code)||(cleanPhone(a.phone)&&cleanPhone(a.phone)===cleanPhone(b.phone))));
  const currentClinic=()=>clinicDirectory.find(c=>c.key===selectedClinicKey)||null;
  function setupClinicSelector(){
-  const available=assignedClinicKey?clinicDirectory.filter(c=>c.key===assignedClinicKey):clinicDirectory;
-  $('clinicSelect').innerHTML=available.map(c=>'<option value="'+safe(c.key)+'">'+safe(c.name)+'</option>').join('');
+  $('clinicSelect').innerHTML=clinicDirectory.map(c=>'<option value="'+safe(c.key)+'">'+safe(c.name)+'</option>').join('');
   $('clinicSelect').value=selectedClinicKey;
-  $('clinicSelect').disabled=!!assignedClinicKey;
+  $('clinicSelect').disabled=false;
   updateClinicHeader();
  }
  function updateClinicHeader(){
@@ -225,7 +224,7 @@
   if(!client){msg('globalError','Supabase configuration is missing. Check config.js.',true);return;}
   msg('globalError','',false);
   const results=await Promise.all([
-   client.from('appointments').select('id,patient_name,phone,clinic,clinic_key,concern,appointment_date,slot,status,patient_code,portal_access_enabled,created_at').order('appointment_date',{ascending:false}).limit(1000),
+   client.from('appointments').select('id,patient_name,phone,clinic,clinic_key,appointment_date,slot,status,patient_code,portal_access_enabled,created_at,doctor_dispatch_status,assigned_doctor_name,sent_to_doctor_at').eq('status','approved').eq('doctor_dispatch_status','sent').order('appointment_date',{ascending:false}).limit(1000),
    client.from('patients').select('id,doctor_id,clinic_key,full_name,phone,age,gender,allergies,patient_code,portal_access_enabled,created_at').order('created_at',{ascending:false}).limit(1500),
    client.from('prescriptions').select('id,patient_id,doctor_id,clinic_key,appointment_id,patient_name,patient_phone,patient_age,patient_gender,patient_allergies,diagnosis,complaints,medicines,medication_items,advice,clinical_notes,vitals,follow_up_date,created_at').order('created_at',{ascending:false}).limit(1500)
   ]);
@@ -471,17 +470,13 @@
  }
  async function enter(s){
   session=s;
-  if(!s){assignedClinicKey='';isClinicAdmin=false;$('clinicSelect').disabled=false;$('loginPanel').classList.remove('hidden');$('dashboard').classList.add('hidden');$('logout').classList.add('hidden');return}
+  if(!s){$('clinicSelect').disabled=false;$('loginPanel').classList.remove('hidden');$('dashboard').classList.add('hidden');$('logout').classList.add('hidden');return}
   const meta=s.user&&s.user.app_metadata?s.user.app_metadata:{};
-  const clinicKey=String(meta.clinic_key||'');
-  const isMasterAdmin=meta.role==='admin'&&(!clinicKey||clinicKey==='*');
-  isClinicAdmin=meta.role==='admin'&&!isMasterAdmin&&clinicDirectory.some(c=>c.key===clinicKey);
-  if(meta.role!=='doctor'&&!isMasterAdmin&&!isClinicAdmin){await client.auth.signOut();msg('loginError','This account is not assigned as a clinician, clinic admin, or Master Admin. Please check its Supabase app_metadata role and clinic_key.',true);return}
-  assignedClinicKey=isClinicAdmin?clinicKey:'';
-  if(assignedClinicKey)selectedClinicKey=assignedClinicKey;
+  const isMasterAdmin=meta.role==='admin'&&(!meta.clinic_key||meta.clinic_key==='*');
+  if(meta.role!=='doctor'&&!isMasterAdmin){await client.auth.signOut();msg('loginError','This account does not have Doctor or Master Admin access. Clinic accounts cannot access treatment records.',true);return}
   $('loginPanel').classList.add('hidden');$('dashboard').classList.remove('hidden');$('logout').classList.remove('hidden');
   const heading=$('dashboard').querySelector('h2');
-  if(heading)heading.textContent=isClinicAdmin?'Clinic clinical workspace':'Good day, Doctor';
+  if(heading)heading.textContent='Good day, Doctor';
   setupClinicSelector();
   await loadData();
  }
@@ -535,7 +530,7 @@
  $('historyList').addEventListener('click',e=>{const b=e.target.closest('button[data-download]');if(!b)return;const r=currentHistory.find(x=>x.id===b.dataset.download);downloadPrescription(r)});
  $('refresh').addEventListener('click',loadData);
  $('logout').addEventListener('click',async()=>{
-  await client.auth.signOut();session=null;appointments=[];patients=[];recentPrescriptions=[];selectedPatient=null;selectedAppointment=null;assignedClinicKey='';isClinicAdmin=false;$('clinicSelect').disabled=false;
+  await client.auth.signOut();session=null;appointments=[];patients=[];recentPrescriptions=[];selectedPatient=null;selectedAppointment=null;$('clinicSelect').disabled=false;
   $('dashboard').classList.add('hidden');$('logout').classList.add('hidden');$('loginPanel').classList.remove('hidden');
  });
  clearMedicineRows();
