@@ -3,6 +3,21 @@
 -- Clinic accounts can manage bookings, routing, fees and payments only.
 -- Diagnosis, medicines, therapy notes and prescription records remain doctor-only.
 
+alter table public.prescriptions
+  add column if not exists clinic_key text;
+
+update public.prescriptions r
+set clinic_key = p.clinic_key
+from public.patients p
+where r.patient_id = p.id and r.clinic_key is null and p.clinic_key is not null;
+
+update public.prescriptions r
+set clinic_key = a.clinic_key
+from public.appointments a
+where r.appointment_id = a.id and r.clinic_key is null and a.clinic_key is not null;
+
+create index if not exists prescriptions_clinic_key_idx on public.prescriptions(clinic_key, created_at desc);
+
 alter table public.appointments
   add column if not exists rejection_reason text,
   add column if not exists doctor_dispatch_status text not null default 'not_sent',
