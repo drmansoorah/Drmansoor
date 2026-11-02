@@ -52,6 +52,27 @@
         <div class="bg-white border rounded-xl p-4"><p class="text-xs text-slate-500">Approved</p><p id="approvedCount" class="text-2xl font-bold">—</p></div>
         <div class="bg-white border rounded-xl p-4"><p class="text-xs text-slate-500">Rejected</p><p id="rejectedCount" class="text-2xl font-bold">—</p></div><div class="bg-white border rounded-xl p-4"><p class="text-xs text-slate-500">Payments collected</p><p id="collectedTotal" class="text-2xl font-bold">₹0</p></div>
       </div>
+      <section class="grid lg:grid-cols-[1fr_1fr] gap-4 mb-5">
+        <div class="bg-white border border-slate-200 rounded-xl p-4">
+          <div class="flex items-start justify-between gap-3"><div><p class="text-[10px] uppercase tracking-widest font-extrabold text-teal-700">Daily close-out</p><h3 class="font-bold text-lg mt-1">Today's clinic report</h3></div><input id="dailyDate" type="date" class="rounded-lg border border-slate-300 px-2 py-2 text-sm"></div>
+          <div class="grid grid-cols-3 gap-2 mt-4">
+            <div class="rounded-lg bg-slate-50 p-3"><p class="text-[10px] text-slate-500">Patients arrived</p><p id="dailyArrived" class="text-xl font-extrabold">—</p></div>
+            <div class="rounded-lg bg-slate-50 p-3"><p class="text-[10px] text-slate-500">Collected</p><p id="dailyCollected" class="text-xl font-extrabold">₹0</p></div>
+            <div class="rounded-lg bg-slate-50 p-3"><p class="text-[10px] text-slate-500">Transferred</p><p id="dailyRemitted" class="text-xl font-extrabold">₹0</p></div>
+          </div>
+          <p id="dailyMethods" class="text-xs text-slate-500 mt-3">Cash / UPI / bank / other breakdown will appear here.</p>
+        </div>
+        <div id="doctorRemittancePanel" class="bg-white border border-slate-200 rounded-xl p-4">
+          <p class="text-[10px] uppercase tracking-widest font-extrabold text-teal-700">Doctor fee transfer</p><h3 class="font-bold text-lg mt-1">Transfer collected fee to Doctor</h3>
+          <p class="text-xs text-slate-500 mt-1">Only money collected today and not already transferred can be recorded.</p>
+          <div class="grid sm:grid-cols-2 gap-2 mt-3">
+            <label class="text-xs font-semibold text-slate-600">Amount (INR)<input id="remittanceAmount" type="number" min="0.01" step="0.01" class="block mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="e.g. 3000"></label>
+            <label class="text-xs font-semibold text-slate-600">Transfer via<select id="remittanceMethod" class="block mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"><option value="cash">Cash</option><option value="bank_transfer">Bank transfer</option><option value="other">Other</option></select></label>
+            <label class="sm:col-span-2 text-xs font-semibold text-slate-600">Narration / details<textarea id="remittanceNarration" rows="2" class="block mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="e.g. Today's clinic consultation collection transferred to doctor"></textarea></label>
+          </div>
+          <div class="flex items-center justify-between gap-3 mt-3"><p id="remittanceMessage" class="text-xs text-slate-500">Available to transfer: ₹0</p><button id="transferDoctorBtn" class="rounded-lg bg-teal-700 hover:bg-teal-800 text-white px-4 py-2 text-sm font-bold">Record transfer</button></div>
+        </div>
+      </section>
       <div class="flex flex-wrap gap-2 mb-4"><input id="searchInput" placeholder="Search name, phone or clinic" class="flex-1 min-w-52 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"><select id="statusFilter" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"><option value="all">All statuses</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select></div>
       <div id="dashboardError" role="alert" class="text-sm text-rose-700 mb-3"></div>
       <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
@@ -59,6 +80,29 @@
       </div>
       <p class="text-xs text-slate-500 mt-3">Clinic login provides appointment, payment and clinic-routing controls only. Patient treatment information is not available here.</p>
     </section>
+    <div id="handoffModal" class="hidden fixed inset-0 z-50 bg-slate-950/50 p-3 sm:p-6 flex items-center justify-center">
+      <form id="handoffForm" class="w-full max-w-2xl max-h-[92vh] overflow-y-auto bg-white rounded-2xl shadow-2xl p-5 sm:p-6">
+        <div class="flex items-start justify-between gap-3"><div><p class="text-[10px] uppercase tracking-widest font-extrabold text-teal-700">Doctor handoff</p><h3 class="text-xl font-extrabold mt-1">Approve collection & send to Doctor</h3><p id="handoffPatient" class="text-sm text-slate-500 mt-1"></p></div><button type="button" id="closeHandoff" class="rounded-lg border px-3 py-2 text-sm font-bold">Close</button></div>
+        <div class="grid sm:grid-cols-3 gap-3 my-4">
+          <div class="rounded-xl bg-slate-50 p-3"><p class="text-[10px] text-slate-500">Doctor fee</p><p id="handoffFee" class="text-lg font-extrabold">₹0</p></div>
+          <div class="rounded-xl bg-slate-50 p-3"><p class="text-[10px] text-slate-500">Already paid</p><p id="handoffAlreadyPaid" class="text-lg font-extrabold">₹0</p></div>
+          <div class="rounded-xl bg-amber-50 p-3"><p class="text-[10px] text-amber-700">Remaining</p><p id="handoffBalance" class="text-lg font-extrabold text-amber-800">₹0</p></div>
+        </div>
+        <div id="handoffPaymentFields" class="grid sm:grid-cols-2 gap-3">
+          <label class="text-xs font-bold text-slate-600">Amount collected now (INR)<input id="handoffAmount" type="number" min="0" step="0.01" class="block mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm" required></label>
+          <label class="text-xs font-bold text-slate-600">Payment collected via<select id="handoffMethod" class="block mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm"><option value="cash">Cash</option><option value="upi">UPI</option><option value="card">Card</option><option value="bank_transfer">Bank transfer</option><option value="other">Other</option></select></label>
+          <label class="text-xs font-bold text-slate-600">Transaction reference (optional)<input id="handoffReference" class="block mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm" placeholder="UPI / bank reference"></label>
+          <label class="text-xs font-bold text-slate-600">Collection narration (optional)<input id="handoffPaymentNarration" class="block mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm" placeholder="e.g. Cash received at clinic desk"></label>
+        </div>
+        <label class="flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 p-3 mt-4"><input id="handoffSkipPayment" type="checkbox" class="mt-1"><span><b class="text-sm text-rose-800">Skip / waive payment for this visit</b><span class="block text-xs text-rose-700 mt-1">Doctor will see this in red in the doctor login. Use only with a reason.</span></span></label>
+        <div id="handoffSkipFields" class="hidden mt-3 grid sm:grid-cols-2 gap-3">
+          <label class="text-xs font-bold text-rose-800">Reason for skipping payment<select id="handoffSkipReason" class="block mt-1 w-full rounded-lg border border-rose-300 bg-white px-3 py-2.5 text-sm"><option value="">Select reason</option><option value="Doctor recommendation">Doctor recommendation</option><option value="Known patient">Known patient</option><option value="Emergency / urgent case">Emergency / urgent case</option><option value="Fee exemption">Fee exemption</option><option value="Other">Other</option></select></label>
+          <label class="text-xs font-bold text-rose-800">Reason details<input id="handoffSkipDetail" class="block mt-1 w-full rounded-lg border border-rose-300 bg-white px-3 py-2.5 text-sm" placeholder="Optional short detail"></label>
+        </div>
+        <label class="block text-xs font-bold text-slate-600 mt-4">Note for Doctor (known patient / recommendation / other handoff context)<textarea id="handoffNote" rows="3" class="block mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm" placeholder="This note is sent to the doctor only. Do not enter diagnosis or treatment details here."></textarea></label>
+        <div class="flex flex-wrap items-center justify-between gap-3 border-t pt-4 mt-4"><p id="handoffMessage" class="text-xs text-slate-500">Check the amount before sending the appointment.</p><button id="sendDoctorConfirm" class="rounded-lg bg-teal-700 hover:bg-teal-800 text-white px-5 py-3 text-sm font-extrabold">Send to Doctor</button></div>
+      </form>
+    </div>
   </main>
 <script>
   const configured = window.supabase && window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url && window.SUPABASE_CONFIG.anonKey && !window.SUPABASE_CONFIG.url.includes('YOUR_PROJECT') && !window.SUPABASE_CONFIG.anonKey.includes('YOUR_SUPABASE');
