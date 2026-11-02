@@ -36,7 +36,7 @@
    <div class="w-11 h-11 shrink-0 rounded-2xl bg-gradient-to-br from-teal-800 to-teal-600 text-white flex items-center justify-center font-black text-lg shadow">MA</div>
    <div class="min-w-0"><p class="text-[10px] uppercase tracking-[.18em] font-extrabold text-teal-700">Psychiatry • Clinical Workspace</p><h1 class="font-extrabold text-lg leading-tight text-slate-900">Doctor Dashboard</h1></div>
   </div>
-  <div class="flex items-center gap-3 shrink-0"><div class="hidden sm:block text-right"><p class="text-xs font-bold text-slate-800">Prof. (Dr.) Mansoor Ahmad</p><p class="text-[11px] text-slate-500">MBBS, MD Psychiatry • GMC Anantnag</p></div><button id="logout" class="hidden border border-slate-200 hover:bg-slate-50 rounded-lg px-3 py-2 text-xs font-bold">Sign out</button></div>
+  <div class="flex items-center gap-3 shrink-0"><a href="./admin.html" class="hidden sm:inline text-xs font-bold text-teal-700 hover:underline">Appointment requests</a><div class="hidden sm:block text-right"><p class="text-xs font-bold text-slate-800">Prof. (Dr.) Mansoor Ahmad</p><p class="text-[11px] text-slate-500">MBBS, MD Psychiatry • GMC Anantnag</p></div><button id="logout" class="hidden border border-slate-200 hover:bg-slate-50 rounded-lg px-3 py-2 text-xs font-bold">Sign out</button></div>
  </div>
 </header>
 <main class="max-w-[1500px] mx-auto px-4 sm:px-6 py-6 space-y-6">
@@ -181,7 +181,8 @@
  }
  function clearMedicineRows(){$('medicineRows').innerHTML='';addMedicineRow()}
  function medicationData(){return Array.from($('medicineRows').querySelectorAll('.med-row')).map(row=>({name:row.querySelector('.med-name').value.trim(),strength:row.querySelector('[data-med="strength"]').value.trim(),dose:row.querySelector('[data-med="dose"]').value.trim(),frequency:row.querySelector('[data-med="frequency"]').value.trim(),duration:row.querySelector('[data-med="duration"]').value.trim()})).filter(m=>m.name)}
- function clinicAppointments(){return appointments.filter(a=>a.clinic_key===selectedClinicKey)}
+ function clinicAppointments(){return appointments.filter(a=>a.clinic_key===selectedClinicKey&&a.status==='approved')}
+ function clinicAllAppointments(){return appointments.filter(a=>a.clinic_key===selectedClinicKey)}
  function visiblePatientsForClinic(){
   const appts=clinicAppointments();
   const result=patients.filter(p=>p.clinic_key===selectedClinicKey||appts.some(a=>samePatient(p,a)));
@@ -200,10 +201,11 @@
  function updateStats(){
   clinicPatients=visiblePatientsForClinic();
   const appts=clinicAppointments();
+  const allAppts=clinicAllAppointments();
   const ids=clinicPatients.map(p=>p.id).filter(Boolean);
   const relevantRx=recentPrescriptions.filter(r=>ids.includes(r.patient_id)||clinicPatients.some(p=>!p.id&&cleanPhone(p.phone)===cleanPhone(r.patient_phone)));
   const followups=relevantRx.filter(r=>r.follow_up_date&&r.follow_up_date>=todayISO);
-  $('pendingCount').textContent=appts.filter(a=>a.status==='pending').length;
+  $('pendingCount').textContent=allAppts.filter(a=>a.status==='pending').length;
   $('totalCount').textContent=appts.filter(a=>a.status==='approved').length;
   $('patientCount').textContent=clinicPatients.length;
   $('followupCount').textContent=followups.length;
