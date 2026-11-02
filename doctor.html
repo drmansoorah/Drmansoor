@@ -48,7 +48,7 @@
 
  <section id="dashboard" class="hidden space-y-6">
   <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
-   <div><p class="text-xs text-teal-700 font-extrabold uppercase tracking-[.14em]" id="todayLabel">Clinical overview</p><h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 mt-1">Good day, Doctor</h2><p class="text-sm text-slate-500 mt-1">Choose a clinic, select a patient, then review their clinical history or write a prescription.</p></div>
+   <div><p class="text-xs text-teal-700 font-extrabold uppercase tracking-[.14em]" id="todayLabel">Clinical overview</p><h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 mt-1">Good day, Doctor</h2><p class="text-sm text-slate-500 mt-1">Review clinic appointments, open a patient record, check previous prescriptions and schedule follow-ups.</p></div>
    <button id="refresh" class="btn-soft self-start md:self-auto">↻ Refresh data</button>
   </div>
 
@@ -59,7 +59,8 @@
    </div>
   </section>
 
-  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+   <div class="panel p-4"><p class="text-[11px] uppercase tracking-wider font-bold text-slate-500">Pending approval</p><div class="flex items-end justify-between mt-2"><strong id="pendingCount" class="text-3xl text-amber-700">0</strong><span class="text-amber-700 text-xs font-bold">Needs review</span></div></div>
    <div class="panel p-4"><p class="text-[11px] uppercase tracking-wider font-bold text-slate-500">Approved appointments</p><div class="flex items-end justify-between mt-2"><strong id="totalCount" class="text-3xl text-slate-900">0</strong><span class="text-teal-700 text-xs font-bold">This clinic</span></div></div>
    <div class="panel p-4"><p class="text-[11px] uppercase tracking-wider font-bold text-slate-500">Patients</p><div class="flex items-end justify-between mt-2"><strong id="patientCount" class="text-3xl text-slate-900">0</strong><span class="text-teal-700 text-xs font-bold">This clinic</span></div></div>
    <div class="panel p-4"><p class="text-[11px] uppercase tracking-wider font-bold text-slate-500">Upcoming follow-ups</p><div class="flex items-end justify-between mt-2"><strong id="followupCount" class="text-3xl text-slate-900">0</strong><span class="text-teal-700 text-xs font-bold">Due / scheduled</span></div></div>
@@ -74,7 +75,7 @@
      <div id="patientResults" class="space-y-2 mt-2 max-h-[520px] overflow-y-auto"><p class="text-xs text-slate-400 py-3">Loading patients…</p></div>
     </section>
     <section class="panel p-4">
-     <div class="flex justify-between items-center gap-2"><div><h3 class="font-extrabold text-base">Approved appointment queue</h3><p class="text-xs text-slate-500 mt-1">Online bookings for this clinic</p></div><span class="badge bg-emerald-50 text-emerald-700">Approved</span></div>
+     <div class="flex justify-between items-center gap-2"><div><h3 class="font-extrabold text-base">Clinic appointment queue</h3><p class="text-xs text-slate-500 mt-1">Approved appointments for consultation</p></div><span class="badge bg-emerald-50 text-emerald-700">Clinic only</span></div>
      <div id="appointmentList" class="space-y-2 mt-3 max-h-[330px] overflow-y-auto"><p class="text-xs text-slate-400">Loading appointments…</p></div>
     </section>
    </aside>
