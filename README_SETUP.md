@@ -86,3 +86,24 @@ Upload `index.html`, `config.js`, and `admin.html` together to a static host (Ne
 - Add CAPTCHA/rate limiting before broad public launch; the public insert policy is intentionally limited by RLS but is not an anti-spam system.
 - Review applicable Indian privacy/data-protection requirements and provider terms. Do not describe this as HIPAA compliant.
 - The UI says `Pending` after submission; it must not promise an appointment is confirmed until a staff member approves it.
+
+## Clinic front-desk workflow and doctor confidentiality
+
+Clinic accounts use `admin.html` only. They manage appointments, approval/rejection reasons, clinic consultation fees, payment collection, transfers between clinics, patient arrival, daily collection summaries and remittance to the doctor. Clinic accounts do **not** receive patient diagnoses, clinical concerns, medication lists, therapy notes, prescription history or portal access codes.
+
+After the earlier `clinic-routing.sql` and `doctor-clinic-workspace.sql` migrations have been applied, run these two SQL files in order from Supabase SQL Editor:
+
+1. `supabase/clinic-frontdesk-workspace.sql`
+2. `supabase/clinic-handoff-day-end.sql`
+
+Do not run the deprecated `supabase/clinic-clinician-workspace.sql` migration. It is retained only as a compatibility cleanup for an earlier experimental version and does not grant clinical chart access.
+
+### Appointment handoff
+
+A clinic admin approves a pending appointment. The dashboard then opens the handoff form. Before sending it to the doctor, the clinic records the amount collected, payment method, optional reference/narration and a non-clinical note for the doctor. If payment is waived, the clinic must select a reason such as doctor recommendation, known patient, emergency or fee exemption. A red `PAYMENT SKIPPED` notice appears in the Doctor Workspace.
+
+### Daily close-out
+
+Mark a sent appointment as `Arrived` when the patient presents. The daily close-out panel counts arrivals and payments collected on the selected India-local date. The clinic can record an amount transferred to the doctor by cash, bank transfer or other method with a narration. The database prevents recording a transfer greater than that day's unremitted collections. The Doctor Workspace displays the remittance records.
+
+The daily report and payment/remittance ledger are operational records; they are not a receipt gateway or bank reconciliation. Actual receipt, transfer and bank settlement must still be verified by the clinic.
