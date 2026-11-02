@@ -506,7 +506,9 @@ begin
       transferred_by = auth.uid(),
       doctor_dispatch_status = 'not_sent',
       assigned_doctor_name = null,
-      sent_to_doctor_at = null
+      sent_to_doctor_at = null,
+      visit_status = 'scheduled',
+      arrived_at = null
   where id = p_appointment_id;
 
   return jsonb_build_object(
