@@ -147,7 +147,10 @@ using (
   )
 );
 
-grant select on public.clinic_settings, public.clinic_appointment_payments, public.clinic_transfer_events to authenticated;
+revoke select on public.clinic_settings, public.clinic_appointment_payments, public.clinic_transfer_events from public, anon, authenticated;
+grant select (clinic_key,consultation_fee,currency,updated_at) on public.clinic_settings to authenticated;
+grant select (id,appointment_id,clinic_key,amount,payment_method,reference,narration,collected_at) on public.clinic_appointment_payments to authenticated;
+grant select (id,appointment_id,from_clinic_key,to_clinic_key,reason,transferred_at) on public.clinic_transfer_events to authenticated;
 revoke insert, update, delete on public.clinic_settings, public.clinic_appointment_payments, public.clinic_transfer_events from anon, authenticated;
 
 -- Restore strict clinical privacy even if the earlier experimental clinic-clinician
