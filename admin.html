@@ -157,12 +157,11 @@
     }catch(e){showError('Payment was not recorded: '+e.message);button.disabled=false;button.textContent='Record Payment'}
   }
   async function dispatchToDoctor(a,button){
-    const doctor=prompt('Send this approved appointment to doctor:','Prof. (Dr.) Mansoor Ahmad');
-    if(doctor===null)return;
-    if(doctor.trim().length<3){showError('Enter a valid doctor name.');return}
+    const doctor='Prof. (Dr.) Mansoor Ahmad';
+    if(!confirm('Send this approved appointment to '+doctor+'? Clinical details will remain in the doctor-only workspace.'))return;
     button.disabled=true;button.textContent='Sending…';
     try{
-      const {data,error}=await client.rpc('clinic_dispatch_appointment',{p_appointment_id:a.id,p_doctor_name:doctor.trim()});
+      const {data,error}=await client.rpc('clinic_dispatch_appointment',{p_appointment_id:a.id,p_doctor_name:doctor});
       if(error)throw error;
       showError('Appointment sent to '+data.assigned_doctor_name+'.');
       await loadAppointments();
