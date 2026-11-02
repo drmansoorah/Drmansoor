@@ -514,6 +514,159 @@ begin
 end;
 $fn$;
 
+-- Restore patient portal credential RPCs to Doctor / unscoped Master Admin only.
+-- Clinic-scoped administrators must not reveal or issue patient access codes.
+create or replace function public.doctor_initialize_patient_portal_code(p_patient_id uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions, pg_temp
+as $issue$
+declare
+  v_patient public.patients%rowtype;
+  v_role text;
+  v_clinic_key text;
+  v_code text;
+  v_key text;
+  v_random bytea;
+  v_i integer;
+  v_alphabet constant text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+begin
+  v_role := coalesce(auth.jwt()->'app_metadata'->>'role','');
+  v_clinic_key := coalesce(nullif(auth.jwt()->'app_metadata'->>'clinic_key',''), '*');
+
+  if auth.uid() is null or not (
+    v_role = 'doctor'
+    or (v_role = 'admin' and v_clinic_key = '*')
+  ) then
+    raise exception 'Doctor or Master Admin access required';
+  end if;
+
+  select * into v_patient
+  from public.patients
+  where id = p_patient_id
+    and (
+      (v_role = 'doctor' and doctor_id = auth.uid())
+      or (v_role = 'admin' and v_clinic_key = '*')
+    )
+  for update;
+
+  if not found then
+    raise exception 'Patient record not found or access denied';
+  end if;
+
+  if v_patient.access_code_ciphertext is null then
+    v_code := '';
+    v_random := gen_random_bytes(7);
+    for v_i in 0..6 loop
+      v_code := v_code || substr(v_alphabet,(get_byte(v_random,v_i) % length(v_alphabet))+1,1);
+    end loop;
+    v_key := public._patient_portal_encryption_key();
+
+    update public.patients
+    set patient_code = coalesce(patient_code,public.generate_patient_portal_id()),
+        access_code_hash = crypt(v_code,gen_salt('bf')),
+        access_code_ciphertext = pgp_sym_encrypt(v_code,v_key),
+        portal_access_enabled = true,
+        portal_access_updated_at = now(),
+        updated_at = now()
+    where id = p_patient_id
+    returning patient_code into v_patient.patient_code;
+
+    return jsonb_build_object('patient_code',v_patient.patient_code,'access_code',v_code,'created',true);
+  end if;
+
+  v_key := public._patient_portal_encryption_key();
+  v_code := pgp_sym_decrypt(v_patient.access_code_ciphertext,v_key);
+  return jsonb_build_object('patient_code',v_patient.patient_code,'access_code',v_code,'created',false);
+end;
+$issue$;
+
+create or replace function public.staff_get_patient_portal_credentials(p_patient_code text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions, pg_temp
+as $staff$
+declare
+  v_role text;
+  v_admin_clinic text;
+  v_cipher bytea;
+  v_code text := upper(trim(coalesce(p_patient_code,'')));
+  v_key text;
+  v_name text;
+  v_phone text;
+begin
+  v_role := coalesce(auth.jwt()->'app_metadata'->>'role','');
+  v_admin_clinic := coalesce(nullif(auth.jwt()->'app_metadata'->>'clinic_key',''), '*');
+
+  if auth.uid() is null or not (
+    v_role = 'doctor'
+    or (v_role = 'admin' and v_admin_clinic = '*')
+  ) then
+    raise exception 'Doctor or Master Admin access required';
+  end if;
+
+  if v_role = 'doctor' then
+    select p.access_code_ciphertext,p.patient_code,p.full_name,p.phone
+      into v_cipher,v_code,v_name,v_phone
+    from public.patients p
+    where upper(p.patient_code) = upper(trim(p_patient_code))
+      and p.doctor_id = auth.uid()
+    limit 1;
+
+    if not found then
+      select a.portal_access_ciphertext,a.patient_code,a.patient_name,a.phone
+        into v_cipher,v_code,v_name,v_phone
+      from public.appointments a
+      where upper(a.patient_code) = upper(trim(p_patient_code))
+        and a.status = 'approved'
+      order by a.created_at asc
+      limit 1;
+    end if;
+  else
+    select p.access_code_ciphertext,p.patient_code,p.full_name,p.phone
+      into v_cipher,v_code,v_name,v_phone
+    from public.patients p
+    where upper(p.patient_code) = upper(trim(p_patient_code))
+    limit 1;
+
+    if not found then
+      select a.portal_access_ciphertext,a.patient_code,a.patient_name,a.phone
+        into v_cipher,v_code,v_name,v_phone
+      from public.appointments a
+      where upper(a.patient_code) = upper(trim(p_patient_code))
+      order by a.created_at asc
+      limit 1;
+    end if;
+  end if;
+
+  if v_name is null then
+    return jsonb_build_object('patient_code',v_code,'access_code',null,'message','Patient record not found.');
+  end if;
+
+  if v_cipher is null then
+    return jsonb_build_object(
+      'patient_code',v_code,'access_code',null,'patient_name',v_name,'phone',v_phone,
+      'message','This older code was saved only as a one-way hash and cannot be displayed. Verify the patient before issuing a new permanent code.'
+    );
+  end if;
+
+  v_key := public._patient_portal_encryption_key();
+  return jsonb_build_object(
+    'patient_code',v_code,
+    'access_code',pgp_sym_decrypt(v_cipher,v_key),
+    'patient_name',v_name,
+    'phone',v_phone
+  );
+end;
+$staff$;
+
+revoke all on function public.doctor_initialize_patient_portal_code(uuid) from public, anon;
+revoke all on function public.staff_get_patient_portal_credentials(text) from public, anon;
+grant execute on function public.doctor_initialize_patient_portal_code(uuid) to authenticated;
+grant execute on function public.staff_get_patient_portal_credentials(text) to authenticated;
+
 revoke all on function public.clinic_save_rejection_reason(uuid,text) from public, anon;
 revoke all on function public.clinic_decide_appointment(uuid,text,text) from public, anon;
 revoke all on function public.clinic_dispatch_appointment(uuid,text) from public, anon;
