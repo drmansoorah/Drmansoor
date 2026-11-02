@@ -51,7 +51,6 @@ to authenticated
 with check (
   (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
   and clinic_key = auth.jwt() -> 'app_metadata' ->> 'clinic_key'
-  and doctor_id = auth.uid()
 );
 
 drop policy if exists "Clinic clinicians update assigned patients" on public.patients;
