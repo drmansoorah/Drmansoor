@@ -94,7 +94,7 @@ with check (
     from public.patients p
     where p.id = patient_id
       and p.clinic_key = auth.jwt() -> 'app_metadata' ->> 'clinic_key'
-      and public.prescriptions.doctor_id in (auth.uid(), p.doctor_id)
+      and prescriptions.doctor_id in (auth.uid(), p.doctor_id)
   )
 );
 
@@ -115,7 +115,7 @@ with check (
     from public.patients p
     where p.id = patient_id
       and p.clinic_key = auth.jwt() -> 'app_metadata' ->> 'clinic_key'
-      and public.prescriptions.doctor_id in (auth.uid(), p.doctor_id)
+      and prescriptions.doctor_id in (auth.uid(), p.doctor_id)
   )
 );
 
