@@ -198,8 +198,7 @@
   clinicPatients=visiblePatientsForClinic();
   const appts=clinicAppointments();
   const ids=clinicPatients.map(p=>p.id).filter(Boolean);
-  const codes=clinicPatients.map(p=>p.patient_code).filter(Boolean);
-  const relevantRx=recentPrescriptions.filter(r=>ids.includes(r.patient_id)||codes.includes(r.patient_code));
+  const relevantRx=recentPrescriptions.filter(r=>ids.includes(r.patient_id)||clinicPatients.some(p=>!p.id&&cleanPhone(p.phone)===cleanPhone(r.patient_phone)));
   const followups=relevantRx.filter(r=>r.follow_up_date&&r.follow_up_date>=todayISO);
   $('totalCount').textContent=appts.length;
   $('patientCount').textContent=clinicPatients.length;
@@ -211,7 +210,7 @@
   const results=await Promise.all([
    client.from('appointments').select('id,patient_name,phone,clinic,clinic_key,concern,appointment_date,slot,status,patient_code,portal_access_enabled,created_at').eq('status','approved').order('appointment_date',{ascending:false}).limit(1000),
    client.from('patients').select('id,doctor_id,clinic_key,full_name,phone,age,gender,allergies,patient_code,portal_access_enabled,created_at').order('created_at',{ascending:false}).limit(1500),
-   client.from('prescriptions').select('id,patient_id,doctor_id,appointment_id,patient_name,patient_phone,patient_age,patient_gender,patient_allergies,patient_code,diagnosis,complaints,medicines,medication_items,advice,clinical_notes,vitals,follow_up_date,created_at').order('created_at',{ascending:false}).limit(1500)
+   client.from('prescriptions').select('id,patient_id,doctor_id,appointment_id,patient_name,patient_phone,patient_age,patient_gender,patient_allergies,diagnosis,complaints,medicines,medication_items,advice,clinical_notes,vitals,follow_up_date,created_at').order('created_at',{ascending:false}).limit(1500)
   ]);
   const ap=results[0],pt=results[1],rx=results[2];
   if(ap.error)msg('globalError','Appointments could not load: '+ap.error.message,true);else appointments=ap.data||[];
@@ -293,9 +292,7 @@
   currentHistory=[];
   if(!selectedPatient){renderHistory();return}
   currentHistory=recentPrescriptions.filter(r=>
-   (selectedPatient.id&&r.patient_id===selectedPatient.id)||
-   (!selectedPatient.id&&selectedPatient.patient_code&&r.patient_code===selectedPatient.patient_code)||
-   (!selectedPatient.id&&!selectedPatient.patient_code&&cleanPhone(r.patient_phone)===cleanPhone(selectedPatient.phone))
+   (selectedPatient.id?r.patient_id===selectedPatient.id:cleanPhone(r.patient_phone)===cleanPhone(selectedPatient.phone))
   ).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
   renderHistory();
  }
@@ -358,9 +355,9 @@
    patient.patient_code=credentialData.patient_code;patient.portal_access_enabled=true;
    const payload={
     patient_id:patient.id,appointment_id:selectedAppointment?selectedAppointment.id:null,
-    doctor_id:patient.doctor_id||session.user.id,patient_code:patient.patient_code,
+    doctor_id:patient.doctor_id||session.user.id,
     patient_name:patient.full_name,patient_phone:patient.phone,patient_age:patient.age,
-    patient_gender:patient.gender,patient_allergies:patient.allergies||'',clinic_key:selectedClinicKey,
+    patient_gender:patient.gender,patient_allergies:patient.allergies||'',
     diagnosis:diagnosis,complaints:$('complaints').value.trim(),medicines:medicinesAsText(meds),
     medication_items:meds,advice:$('advice').value.trim(),clinical_notes:$('reviewNote').value.trim(),
     vitals:collectVitals(),follow_up_date:$('followup').value||null
