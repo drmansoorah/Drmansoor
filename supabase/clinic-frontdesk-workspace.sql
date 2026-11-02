@@ -492,6 +492,11 @@ begin
   update public.appointments
   set clinic_key = p_target_clinic_key,
       clinic = p_target_clinic_key || '::' || v_name,
+      consultation_fee = case
+        when coalesce(amount_paid,0) = 0
+          then coalesce((select s.consultation_fee from public.clinic_settings s where s.clinic_key = p_target_clinic_key),consultation_fee)
+        else consultation_fee
+      end,
       transfer_from_clinic_key = v_from,
       transfer_reason = left(trim(p_reason),500),
       transferred_at = now(),
