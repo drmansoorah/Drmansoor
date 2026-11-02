@@ -17,6 +17,8 @@ alter table public.appointments
   add column if not exists transferred_by uuid references auth.users(id);
 
 alter table public.appointments
+  drop constraint if exists appointments_consultation_fee_nonnegative,
+  drop constraint if exists appointments_amount_paid_nonnegative,
   drop constraint if exists appointments_doctor_dispatch_status_check,
   add constraint appointments_doctor_dispatch_status_check
     check (doctor_dispatch_status in ('not_sent','sent')),
@@ -122,7 +124,7 @@ drop policy if exists "Clinic clinicians update assigned prescriptions" on publi
 -- Prevent direct row reads of free-text clinical concern and portal secrets by all
 -- authenticated front-desk accounts. The doctor portal uses only the operational
 -- appointment fields listed below; all patient access-code operations use RPCs.
-revoke select on public.appointments from anon, authenticated;
+revoke select on public.appointments from public, anon, authenticated;
 grant select (
   id, patient_name, phone, clinic, clinic_key, appointment_date, slot, status,
   patient_code, portal_access_enabled, created_at, decision_at, notification_status,
