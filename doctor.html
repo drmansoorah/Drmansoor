@@ -66,7 +66,12 @@
    <div class="panel p-4"><p class="text-[11px] uppercase tracking-wider font-bold text-slate-500">Upcoming follow-ups</p><div class="flex items-end justify-between mt-2"><strong id="followupCount" class="text-3xl text-slate-900">0</strong><span class="text-teal-700 text-xs font-bold">Due / scheduled</span></div></div>
   </div>
 
-  <div class="grid xl:grid-cols-12 gap-5 items-start">
+  <section id="doctorRemittanceSection" class="panel p-4 sm:p-5">
+   <div class="flex items-center justify-between gap-3"><div><p class="text-[10px] uppercase tracking-[.15em] text-teal-700 font-extrabold">Clinic collection handover</p><h3 class="text-base font-extrabold mt-1">Fee transfers received from clinics</h3><p class="text-xs text-slate-500 mt-1">Cash / bank / other remittances entered by each clinic.</p></div><span class="badge bg-slate-100 text-slate-600">Doctor view</span></div>
+   <div id="doctorRemittanceList" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-4"><p class="text-xs text-slate-400">Loading transfer records…</p></div>
+  </section>
+
+  <div class="grid xl:grid-cols-12 gap-5 items-start>
    <aside class="xl:col-span-4 space-y-5">
     <section class="panel p-4">
      <div class="flex justify-between items-center gap-2"><div><h3 class="font-extrabold text-base">Clinic patient directory</h3><p class="text-xs text-slate-500 mt-1">Only patients associated with selected clinic</p></div><button id="newPatient" class="btn-soft whitespace-nowrap">＋ Add patient</button></div>
@@ -117,7 +122,14 @@
         <div class="sm:col-span-2 flex flex-wrap items-center justify-between gap-2"><p id="patientEditMessage" class="text-xs text-slate-500"></p><div class="flex gap-2"><button id="cancelPatientEdit" type="button" class="btn-muted">Cancel</button><button id="savePatientEdit" class="btn-primary">Save details</button></div></div>
        </form>
       </section>
-      <div class="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
+      <div id="doctorHandoffPanel" class="hidden mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
+       <div class="flex flex-wrap items-center justify-between gap-2"><p class="text-xs font-extrabold text-slate-800">Clinic handoff & fee details</p><span id="doctorPaymentBadge" class="badge bg-emerald-50 text-emerald-700">Payment status</span></div>
+       <div class="grid sm:grid-cols-3 gap-3 mt-3"><div><p class="info-label">Doctor fee</p><p id="doctorFeeValue" class="info-value">—</p></div><div><p class="info-label">Collected</p><p id="doctorPaidValue" class="info-value">—</p></div><div><p class="info-label">Balance</p><p id="doctorBalanceValue" class="info-value">—</p></div></div>
+       <div id="doctorPaymentItems" class="text-xs text-slate-600 mt-3"></div>
+       <div id="doctorSkipReason" class="hidden rounded-lg border border-rose-200 bg-rose-50 text-rose-800 p-3 text-xs font-bold mt-3"></div>
+       <div id="doctorHandoffNote" class="hidden mt-3 text-xs text-slate-700"><b>Clinic note:</b> <span></span></div>
+      </div>
+      <div class="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3>
        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2"><div><p class="text-xs font-extrabold text-slate-800">Permanent MindCare Access Code</p><p id="portalCodeMessage" class="text-[11px] text-slate-500 mt-1">Code is created once and retained for the patient.</p></div><div class="flex gap-2"><input id="portalAccessCode" class="field bg-white font-mono tracking-wider max-w-[145px]" readonly placeholder="Not loaded"><button type="button" id="generatePortalCode" class="btn-soft whitespace-nowrap">View / Generate once</button></div></div>
       </div>
      </section>
@@ -224,14 +236,16 @@
   if(!client){msg('globalError','Supabase configuration is missing. Check config.js.',true);return;}
   msg('globalError','',false);
   const results=await Promise.all([
-   client.from('appointments').select('id,patient_name,phone,clinic,clinic_key,appointment_date,slot,status,patient_code,portal_access_enabled,created_at,doctor_dispatch_status,assigned_doctor_name,sent_to_doctor_at').eq('status','approved').eq('doctor_dispatch_status','sent').order('appointment_date',{ascending:false}).limit(1000),
+   client.rpc('doctor_get_dispatched_appointments'),
    client.from('patients').select('id,doctor_id,clinic_key,full_name,phone,age,gender,allergies,patient_code,portal_access_enabled,created_at').order('created_at',{ascending:false}).limit(1500),
-   client.from('prescriptions').select('id,patient_id,doctor_id,clinic_key,appointment_id,patient_name,patient_phone,patient_age,patient_gender,patient_allergies,diagnosis,complaints,medicines,medication_items,advice,clinical_notes,vitals,follow_up_date,created_at').order('created_at',{ascending:false}).limit(1500)
+   client.from('prescriptions').select('id,patient_id,doctor_id,clinic_key,appointment_id,patient_name,patient_phone,patient_age,patient_gender,patient_allergies,diagnosis,complaints,medicines,medication_items,advice,clinical_notes,vitals,follow_up_date,created_at').order('created_at',{ascending:false}).limit(1500),
+   client.rpc('doctor_get_clinic_remittances')
   ]);
-  const ap=results[0],pt=results[1],rx=results[2];
-  if(ap.error)msg('globalError','Appointments could not load: '+ap.error.message,true);else appointments=ap.data||[];
+  const ap=results[0],pt=results[1],rx=results[2],rem=results[3];
+  if(ap.error)msg('globalError','Doctor handoff queue could not load: '+ap.error.message,true);else appointments=Array.isArray(ap.data)?ap.data:[];
   if(pt.error)msg('globalError','Patient records could not load. Run doctor-clinic-workspace.sql in Supabase SQL Editor. Details: '+pt.error.message,true);else patients=pt.data||[];
   if(rx.error)msg('globalError','Prescription history could not load: '+rx.error.message,true);else recentPrescriptions=rx.data||[];
+  if(rem.error)msg('globalError','Clinic remittance details could not load: '+rem.error.message,true);else renderDoctorRemittances(Array.isArray(rem.data)?rem.data:[]);
   updateStats();
   renderPatients($('patientSearch').value);
   renderAppointments();
@@ -253,9 +267,18 @@
    return '<button type="button" data-patient="'+safe(p.id||'')+'" data-phone="'+safe(p.phone||'')+'" class="patient-hit '+(isSelected?'active':'')+'"><div class="flex items-center justify-between gap-2"><b class="text-sm text-slate-800">'+safe(p.full_name||'Patient')+'</b><span class="text-[10px] font-bold text-teal-700">'+rxCount+' previous visit(s)</span></div><p class="text-xs text-slate-500 mt-1">'+safe(p.phone||'No phone')+(p.age?' • '+safe(p.age)+' yrs':'')+'</p><p class="text-[10px] text-slate-400 mt-1">'+safe(p.patient_code||'Patient ID pending')+(appt?' • Online booking':'')+'</p></button>';
   }).join(''):'<div class="rounded-xl border border-dashed border-slate-200 p-5 text-center"><p class="text-sm text-slate-500">'+(q?'No matching patient in this clinic.':'No patient records found for this clinic yet.')+'</p><p class="text-xs text-slate-400 mt-1">Try another clinic or add a walk-in patient.</p></div>';
  }
+ function renderDoctorRemittances(rows){
+  $('doctorRemittanceList').innerHTML=rows.length?rows.map(r=>'<article class="rounded-xl border border-slate-200 bg-slate-50 p-3"><p class="text-xs font-bold text-slate-800">'+safe((clinicDirectory.find(c=>c.key===r.clinic_key)||{}).shortName||r.clinic_key)+'</p><p class="text-lg font-extrabold text-teal-800 mt-1">₹'+Number(r.amount||0).toLocaleString('en-IN')+'</p><p class="text-[11px] text-slate-500 mt-1">'+safe(fmtDate(r.remittance_date))+' · '+safe(r.transfer_method.replace('_',' '))+'</p><p class="text-xs text-slate-600 mt-2">'+safe(r.narration||'')+'</p></article>').join(''):'<p class="text-xs text-slate-400">No doctor fee transfers have been recorded for today.</p>';
+ }
  function renderAppointments(){
   const list=clinicAppointments();
-  $('appointmentList').innerHTML=list.length?list.map(a=>'<button type="button" data-appointment="'+safe(a.id)+'" class="patient-hit"><div class="flex justify-between gap-2"><b class="text-sm text-slate-800">'+safe(a.patient_name)+'</b><span class="text-[10px] text-emerald-700 font-bold">APPROVED</span></div><p class="text-xs text-slate-500 mt-1">'+safe(a.phone)+' • '+safe(a.concern||'Appointment')+'</p><p class="text-[11px] text-slate-400 mt-1">'+safe(fmtDate(a.appointment_date))+' • '+safe(a.slot)+'</p></button>').join(''):'<p class="text-xs text-slate-400 py-3">No approved online appointments for this clinic.</p>';
+  $('appointmentList').innerHTML=list.length?list.map(a=>{
+   const skipped=!!a.payment_skipped;
+   const status=skipped?'<span class="badge bg-rose-100 text-rose-800">PAYMENT SKIPPED</span>':'<span class="badge bg-emerald-50 text-emerald-700">SENT TO DOCTOR</span>';
+   const items=Array.isArray(a.payment_items)?a.payment_items:[];
+   const methods=items.map(p=>safe(p.payment_method.replace('_',' '))+': ₹'+Number(p.amount||0).toLocaleString('en-IN')).join(' · ');
+   return '<button type="button" data-appointment="'+safe(a.id)+'" class="patient-hit"><div class="flex justify-between gap-2"><b class="text-sm text-slate-800">'+safe(a.patient_name)+'</b>'+status+'</div><p class="text-xs text-slate-500 mt-1">'+safe(a.phone)+' · '+safe((clinicDirectory.find(c=>c.key===a.clinic_key)||{}).shortName||a.clinic_key)+'</p><p class="text-[11px] text-slate-400 mt-1">'+safe(fmtDate(a.appointment_date))+' · '+safe(a.slot)+'</p><p class="text-xs font-semibold mt-2 '+(skipped?'text-rose-700':'text-slate-600')+'">Fee ₹'+Number(a.consultation_fee||0).toLocaleString('en-IN')+' · Collected ₹'+Number(a.amount_paid||0).toLocaleString('en-IN')+' · Balance ₹'+Number(a.balance||0).toLocaleString('en-IN')+'</p>'+(skipped?'<p class="text-xs font-bold text-rose-700 mt-1">Skip reason: '+safe(a.payment_skip_reason||'Not provided')+'</p>':'')+(methods?'<p class="text-[11px] text-slate-500 mt-1">Received via: '+methods+'</p>':'')+(a.doctor_handoff_note?'<p class="text-xs text-slate-600 mt-2">Clinic note: '+safe(a.doctor_handoff_note)+'</p>':'')+'</button>';
+  }).join(''):'<p class="text-xs text-slate-400 py-3">No appointments have been sent to your doctor workspace yet.</p>';
  }
  function clearSelectedPatient(){
   selectedPatient=null;selectedAppointment=null;currentHistory=[];
