@@ -211,15 +211,23 @@
         if(reasonError)throw reasonError;
       }
       const {data:{session}} = await client.auth.getSession();
-      const response = await fetch(window.SUPABASE_CONFIG.url + '/functions/v1/appointment-decision', {method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token,'apikey':window.SUPABASE_CONFIG.anonKey}, body:JSON.stringify({appointment_id:id, action, rejection_reason:rejectionReason.trim()||null})});
-      const result = await response.json().catch(()=>({}));
-      if (!response.ok) throw new Error(result.error || 'Request failed ('+response.status+')');
-      if (result.notifications) {
-        const failed = Object.entries(result.notifications).filter(([k,v])=>v!=='sent').map(([k,v])=>k+': '+v);
-        if (failed.length) showError('Status updated, but some notifications need attention: ' + failed.join('; '));
+      let notificationProblem='';
+      try {
+        const response = await fetch(window.SUPABASE_CONFIG.url + '/functions/v1/appointment-decision', {method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token,'apikey':window.SUPABASE_CONFIG.anonKey}, body:JSON.stringify({appointment_id:id, action, rejection_reason:rejectionReason.trim()||null})});
+        const result = await response.json().catch(()=>({}));
+        if (!response.ok) notificationProblem=result.error || 'Notification service unavailable ('+response.status+')';
+        else if (result.notifications) {
+          const failed = Object.entries(result.notifications).filter(([k,v])=>v!=='sent').map(([k,v])=>k+': '+v);
+          if (failed.length) notificationProblem=failed.join('; ');
+        }
+      } catch(notifyError) { notificationProblem=notifyError.message || 'Notification service unavailable'; }
+      if(notificationProblem){
+        const {error:fallbackError}=await client.rpc('clinic_decide_appointment',{p_appointment_id:id,p_action:action,p_reason:rejectionReason.trim()||null});
+        if(fallbackError)throw new Error('Decision/notification service failed: '+notificationProblem+'. Database fallback also failed: '+fallbackError.message);
+        showError('Appointment decision saved. Automatic notification was unavailable; please contact the patient manually. '+notificationProblem);
       }
       await loadAppointments();
-    } catch(e) { showError(e.message || 'Could not update appointment.'); button.disabled=false; button.textContent=action==='approve'?'Approve + notify':'Reject'; }
+    } catch(e) { showError(e.message || 'Could not update appointment.'); button.disabled=false; button.textContent=action==='approve'?'Approve appointment':'Reject with reason'; }
   }
   $('loginForm').addEventListener('submit', async e => { e.preventDefault(); $('loginError').textContent=''; if(!client){$('loginError').textContent='Supabase is not configured. Edit config.js first.';return;} const {data,error}=await client.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value}); if(error){$('loginError').textContent=error.message;return;} await ensureAdmin(data.session); });
   $('appointmentsBody').addEventListener('click',e=>{
