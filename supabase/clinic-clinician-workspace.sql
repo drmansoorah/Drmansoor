@@ -41,6 +41,7 @@ using (
   and coalesce(nullif(auth.jwt() -> 'app_metadata' ->> 'clinic_key', ''), '*')
       in ('mansoor-private', 'gmc-anantnag', 'south-kashmir')
   and clinic_key = auth.jwt() -> 'app_metadata' ->> 'clinic_key'
+  and clinic_key in ('mansoor-private','gmc-anantnag','south-kashmir')
 );
 
 drop policy if exists "Clinic clinicians create assigned patients" on public.patients;
@@ -61,10 +62,12 @@ to authenticated
 using (
   (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
   and clinic_key = auth.jwt() -> 'app_metadata' ->> 'clinic_key'
+  and clinic_key in ('mansoor-private','gmc-anantnag','south-kashmir')
 )
 with check (
   (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
   and clinic_key = auth.jwt() -> 'app_metadata' ->> 'clinic_key'
+  and clinic_key in ('mansoor-private','gmc-anantnag','south-kashmir')
 );
 
 -- Prescription access is scoped through the saved clinic_key and, on writes,
@@ -89,6 +92,7 @@ to authenticated
 with check (
   (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
   and clinic_key = auth.jwt() -> 'app_metadata' ->> 'clinic_key'
+  and clinic_key in ('mansoor-private','gmc-anantnag','south-kashmir')
   and exists (
     select 1
     from public.patients p
