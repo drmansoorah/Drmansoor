@@ -44,7 +44,9 @@ using (
     or clinic_key = auth.jwt()->'app_metadata'->>'clinic_key'
   )
 );
-grant select on public.clinic_doctor_remittances to authenticated;
+revoke select on public.clinic_doctor_remittances from public, anon, authenticated;
+grant select (id,clinic_key,remittance_date,amount,transfer_method,narration,transferred_at)
+  on public.clinic_doctor_remittances to authenticated;
 revoke insert, update, delete on public.clinic_doctor_remittances from public, anon, authenticated;
 
 -- Atomic handoff: capture today's collection/waiver/note and then send the
