@@ -13,6 +13,7 @@ set clinic_key = (
   where regexp_replace(coalesce(a.phone,''),'[^0-9]','','g')
       = regexp_replace(coalesce(p.phone,''),'[^0-9]','','g')
     and a.clinic_key is not null
+    and a.status = 'approved'
   order by a.created_at desc
   limit 1
 )
@@ -24,6 +25,7 @@ where p.clinic_key is null
     where regexp_replace(coalesce(a.phone,''),'[^0-9]','','g')
         = regexp_replace(coalesce(p.phone,''),'[^0-9]','','g')
       and a.clinic_key is not null
+      and a.status = 'approved'
   );
 
 create index if not exists patients_clinic_created_idx
