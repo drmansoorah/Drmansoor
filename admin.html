@@ -203,16 +203,88 @@
       await loadAppointments();
     }catch(e){showError('Payment was not recorded: '+e.message);button.disabled=false;button.textContent='Record Payment'}
   }
-  async function dispatchToDoctor(a,button){
-    const doctor='Prof. (Dr.) Mansoor Ahmad';
-    if(!confirm('Send this approved appointment to '+doctor+'? Only the booking will be sent to the doctor.'))return;
-    button.disabled=true;button.textContent='Sending…';
+  function money(v){return '₹'+Number(v||0).toLocaleString('en-IN',{maximumFractionDigits:2})}
+  function openHandoffModal(a){
+    if(!a)return;
+    handoffAppointment=a;
+    const fee=Number(a.consultation_fee||$('clinicFee').value||0);
+    const paid=Number(a.amount_paid||0);
+    const balance=Math.max(fee-paid,0);
+    $('handoffPatient').textContent=a.patient_name+' · '+a.phone+' · '+a.appointment_date+' · '+a.slot;
+    $('handoffFee').textContent=money(fee);
+    $('handoffAlreadyPaid').textContent=money(paid);
+    $('handoffBalance').textContent=money(balance);
+    $('handoffAmount').value=balance.toFixed(2);
+    $('handoffAmount').max=balance.toFixed(2);
+    $('handoffReference').value='';
+    $('handoffPaymentNarration').value='';
+    $('handoffNote').value='';
+    $('handoffSkipPayment').checked=false;
+    $('handoffSkipReason').value='';
+    $('handoffSkipDetail').value='';
+    $('handoffPaymentFields').classList.remove('hidden');
+    $('handoffSkipFields').classList.add('hidden');
+    $('handoffMessage').textContent='Enter the amount received, or mark payment as skipped with a reason.';
+    $('handoffModal').classList.remove('hidden');
+    $('handoffAmount').focus();
+  }
+  function closeHandoffModal(){ $('handoffModal').classList.add('hidden'); handoffAppointment=null; }
+  async function submitHandoff(e){
+    e.preventDefault();
+    const a=handoffAppointment;if(!a)return;
+    const skip=$('handoffSkipPayment').checked;
+    const amount=skip?0:Number($('handoffAmount').value||0);
+    if(skip&&!$('handoffSkipReason').value){$('handoffMessage').textContent='Select a reason for skipping payment.';return}
+    const skipReason=skip?$('handoffSkipReason').value+($('handoffSkipDetail').value.trim()?': '+$('handoffSkipDetail').value.trim():''):null;
+    if(!skip&&Number($('handoffBalance').textContent.replace(/[^0-9.]/g,''))>0&&amount<=0){$('handoffMessage').textContent='Enter amount collected or select Skip payment.';return}
+    const btn=$('sendDoctorConfirm');btn.disabled=true;btn.textContent='Sending…';
     try{
-      const {data,error}=await client.rpc('clinic_dispatch_appointment',{p_appointment_id:a.id,p_doctor_name:doctor});
+      const {data,error}=await client.rpc('clinic_dispatch_appointment',{
+        p_appointment_id:a.id,p_doctor_name:'Prof. (Dr.) Mansoor Ahmad',
+        p_collection_amount:amount,p_payment_method:skip?null:$('handoffMethod').value,
+        p_payment_reference:$('handoffReference').value.trim()||null,
+        p_payment_narration:$('handoffPaymentNarration').value.trim()||null,
+        p_skip_payment:skip,p_skip_reason:skipReason,
+        p_handoff_note:$('handoffNote').value.trim()||null
+      });
       if(error)throw error;
-      showError('Appointment sent to '+data.assigned_doctor_name+'.');
-      await loadAppointments();
-    }catch(e){showError('Could not send appointment: '+e.message);button.disabled=false;button.textContent='Send to Doctor'}
+      closeHandoffModal();
+      showError(skip?'Appointment sent to Doctor. Payment skipped; a red alert will appear in the doctor login.':'Appointment sent to Doctor with payment details.');
+      await Promise.all([loadAppointments(),loadDailySummary()]);
+    }catch(err){$('handoffMessage').textContent='Could not send: '+err.message}
+    finally{btn.disabled=false;btn.textContent='Send to Doctor'}
+  }
+  async function markAppointmentArrived(a,button){
+    if(!confirm('Mark '+a.patient_name+' as arrived at the clinic?'))return;
+    button.disabled=true;button.textContent='Saving…';
+    try{const {error}=await client.rpc('clinic_mark_arrived',{p_appointment_id:a.id});if(error)throw error;await Promise.all([loadAppointments(),loadDailySummary()]);}
+    catch(e){showError('Could not mark arrival: '+e.message);button.disabled=false;button.textContent='Mark arrived'}
+  }
+  async function loadDailySummary(){
+    if(!client||!$('dailyDate').value)return;
+    const {data,error}=await client.rpc('clinic_daily_summary',{p_date:$('dailyDate').value});
+    if(error){$('remittanceMessage').textContent='Daily summary: '+error.message;return}
+    $('dailyArrived').textContent=data.patients_arrived||0;
+    $('dailyCollected').textContent=money(data.total_collected);
+    $('dailyRemitted').textContent=money(data.transferred_to_doctor);
+    $('dailyMethods').textContent='By method: '+Object.entries(data.by_method||{}).map(([k,v])=>k.replace('_',' ')+': '+money(v)).join(' · ');
+    $('remittanceMessage').textContent='Available to transfer: '+money(data.available_to_transfer);
+    $('collectedTotal').textContent=money(data.total_collected);
+    $('remittanceAmount').max=Number(data.available_to_transfer||0).toFixed(2);
+    if(!Number($('remittanceAmount').value||0)&&Number(data.available_to_transfer||0)>0)$('remittanceAmount').value=Number(data.available_to_transfer).toFixed(2);
+  }
+  async function recordDoctorRemittance(){
+    const amount=Number($('remittanceAmount').value||0), narration=$('remittanceNarration').value.trim();
+    if(amount<=0||!narration){$('remittanceMessage').textContent='Enter a valid amount and narration.';return}
+    const btn=$('transferDoctorBtn');btn.disabled=true;btn.textContent='Recording…';
+    try{
+      const {data,error}=await client.rpc('clinic_record_doctor_remittance',{p_date:$('dailyDate').value,p_amount:amount,p_method:$('remittanceMethod').value,p_narration:narration});
+      if(error)throw error;
+      $('remittanceNarration').value='';$('remittanceAmount').value='';
+      $('remittanceMessage').textContent='Transfer recorded: '+money(data.amount)+' via '+data.method+'. Remaining: '+money(data.available_to_transfer);
+      await loadDailySummary();
+    }catch(e){$('remittanceMessage').textContent='Transfer not recorded: '+e.message}
+    finally{btn.disabled=false;btn.textContent='Record transfer'}
   }
   async function transferAppointment(a,button){
     const choices=clinicDirectory.filter(c=>c.key!==a.clinic_key);
@@ -281,8 +353,12 @@
   $('appointmentsBody').addEventListener('click',e=>{
     const b=e.target.closest('button.decision');if(b){const a=appointments.find(x=>x.id===b.dataset.id);if(a)decide(b.dataset.id,b.dataset.action,b);}
   });
-  $('refreshBtn').addEventListener('click',async()=>{await Promise.all([loadClinicFee(),loadAppointments()])}); $('searchInput').addEventListener('input',renderRows); $('statusFilter').addEventListener('change',renderRows);
+  $('refreshBtn').addEventListener('click',async()=>{await Promise.all([loadClinicFee(),loadAppointments(),loadDailySummary()])}); $('searchInput').addEventListener('input',renderRows); $('statusFilter').addEventListener('change',renderRows);
   $('saveFeeBtn').addEventListener('click',saveClinicFee); $('feeClinicSelect').addEventListener('change',loadClinicFee);
+  $('dailyDate').addEventListener('change',loadDailySummary); $('transferDoctorBtn').addEventListener('click',recordDoctorRemittance);
+  $('handoffForm').addEventListener('submit',submitHandoff); $('closeHandoff').addEventListener('click',closeHandoffModal);
+  $('handoffModal').addEventListener('click',e=>{if(e.target.id==='handoffModal')closeHandoffModal()});
+  $('handoffSkipPayment').addEventListener('change',e=>{$('handoffPaymentFields').classList.toggle('hidden',e.target.checked);$('handoffSkipFields').classList.toggle('hidden',!e.target.checked);if(e.target.checked)$('handoffAmount').value='0'});
   $('logoutBtn').addEventListener('click',async()=>{await client.auth.signOut();$('dashboardPanel').classList.add('hidden');$('loginPanel').classList.remove('hidden');$('appointmentsBody').innerHTML='';});
   if (!configured) $('loginError').textContent='Setup required: edit config.js with your Supabase project URL and anon key.';
   if (client) client.auth.getSession().then(({data})=>ensureAdmin(data.session));
