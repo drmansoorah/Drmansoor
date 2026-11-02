@@ -221,7 +221,7 @@
   renderAppointments();
   if(selectedPatient){
    const refreshed=clinicPatients.find(p=>p.id===selectedPatient.id)||clinicPatients.find(p=>samePatient(p,selectedPatient));
-   if(refreshed)selectPatient(refreshed,selectedAppointment,false);
+   if(refreshed)await selectPatient(refreshed,selectedAppointment,true);
    else clearSelectedPatient();
   }
  }
