@@ -83,15 +83,15 @@
     </section>
     <div id="handoffModal" class="hidden fixed inset-0 z-50 bg-slate-950/50 p-3 sm:p-6 flex items-center justify-center">
       <form id="handoffForm" class="w-full max-w-2xl max-h-[92vh] overflow-y-auto bg-white rounded-2xl shadow-2xl p-5 sm:p-6">
-        <div class="flex items-start justify-between gap-3"><div><p class="text-[10px] uppercase tracking-widest font-extrabold text-teal-700">Doctor handoff</p><h3 class="text-xl font-extrabold mt-1">Approve collection & send to Doctor</h3><p id="handoffPatient" class="text-sm text-slate-500 mt-1"></p></div><button type="button" id="closeHandoff" class="rounded-lg border px-3 py-2 text-sm font-bold">Close</button></div>
+        <div class="flex items-start justify-between gap-3"><div><p class="text-[10px] uppercase tracking-widest font-extrabold text-teal-700">Doctor handoff</p><h3 class="text-xl font-extrabold mt-1">Send to Doctor & Collect the Fee</h3><p id="handoffPatient" class="text-sm text-slate-500 mt-1"></p></div><button type="button" id="closeHandoff" class="rounded-lg border px-3 py-2 text-sm font-bold">Close</button></div>
         <div class="grid sm:grid-cols-3 gap-3 my-4">
           <div class="rounded-xl bg-slate-50 p-3"><p class="text-[10px] text-slate-500">Doctor fee</p><p id="handoffFee" class="text-lg font-extrabold">₹0</p></div>
           <div class="rounded-xl bg-slate-50 p-3"><p class="text-[10px] text-slate-500">Already paid</p><p id="handoffAlreadyPaid" class="text-lg font-extrabold">₹0</p></div>
           <div class="rounded-xl bg-amber-50 p-3"><p class="text-[10px] text-amber-700">Remaining</p><p id="handoffBalance" class="text-lg font-extrabold text-amber-800">₹0</p></div>
         </div>
         <div id="handoffPaymentFields" class="grid sm:grid-cols-2 gap-3">
-          <label class="text-xs font-bold text-slate-600">Amount collected now (INR)<input id="handoffAmount" type="number" min="0" step="0.01" class="block mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm" required></label>
-          <label class="text-xs font-bold text-slate-600">Payment collected via<select id="handoffMethod" class="block mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm"><option value="cash">Cash</option><option value="upi">UPI</option><option value="card">Card</option><option value="bank_transfer">Bank transfer</option><option value="other">Other</option></select></label>
+          <label class="text-xs font-bold text-slate-600">How much fee has been paid? (INR)<input id="handoffAmount" type="number" min="0" step="0.01" class="block mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm" required></label>
+          <label class="text-xs font-bold text-slate-600">Payment collected via<select id="handoffMethod" class="block mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm"><option value="cash">Cash</option><option value="bank_transfer">Bank transfer</option></select></label>
           <label class="text-xs font-bold text-slate-600">Transaction reference (optional)<input id="handoffReference" class="block mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm" placeholder="UPI / bank reference"></label>
           <label class="text-xs font-bold text-slate-600">Collection narration (optional)<input id="handoffPaymentNarration" class="block mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm" placeholder="e.g. Cash received at clinic desk"></label>
         </div>
@@ -101,7 +101,7 @@
           <label class="text-xs font-bold text-rose-800">Reason details<input id="handoffSkipDetail" class="block mt-1 w-full rounded-lg border border-rose-300 bg-white px-3 py-2.5 text-sm" placeholder="Optional short detail"></label>
         </div>
         <label class="block text-xs font-bold text-slate-600 mt-4">Note for Doctor (known patient / recommendation / other handoff context)<textarea id="handoffNote" rows="3" class="block mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm" placeholder="This note is sent to the doctor only. Do not enter diagnosis or treatment details here."></textarea></label>
-        <div class="flex flex-wrap items-center justify-between gap-3 border-t pt-4 mt-4"><p id="handoffMessage" class="text-xs text-slate-500">Check the amount before sending the appointment.</p><button id="sendDoctorConfirm" class="rounded-lg bg-teal-700 hover:bg-teal-800 text-white px-5 py-3 text-sm font-extrabold">Send to Doctor</button></div>
+        <div class="flex flex-wrap items-center justify-between gap-3 border-t pt-4 mt-4"><p id="handoffMessage" class="text-xs text-slate-500">Enter the amount received. The payment will be recorded and the appointment sent to Doctor.</p><button id="sendDoctorConfirm" class="rounded-lg bg-teal-700 hover:bg-teal-800 text-white px-5 py-3 text-sm font-extrabold">Collect Fee & Send to Doctor</button></div>
       </form>
     </div>
   </main>
@@ -163,7 +163,7 @@
   function renderRows() {
     const q = $('searchInput').value.toLowerCase().trim(), status = $('statusFilter').value;
     const rows = appointments.filter(a => (status==='all'||a.status===status) && [a.patient_name,a.phone,a.clinic].some(v=>String(v||'').toLowerCase().includes(q)));
-    $('appointmentsBody').innerHTML = rows.length ? rows.map(a => `<tr class="border-t border-slate-100 align-top"><td class="p-3"><div class="font-bold">${safe(a.patient_name)}</div><a class="text-teal-700 hover:underline" href="tel:${safe(a.phone)}">${safe(a.phone)}</a><div class="text-xs text-slate-400 mt-1">${safe(new Date(a.created_at).toLocaleString())}</div></td><td class="p-3"><div class="font-medium">${safe((clinicDirectory.find(x=>x.key===a.clinic_key)||{}).name||a.clinic)}</div>${a.transfer_from_clinic_key?'<div class="text-[11px] text-slate-500 mt-2">Transferred from '+safe((clinicDirectory.find(x=>x.key===a.transfer_from_clinic_key)||{}).shortName||a.transfer_from_clinic_key)+'</div>'+(a.transfer_reason?'<div class="text-[11px] text-slate-500 mt-1">Transfer note: '+safe(a.transfer_reason)+'</div>':''):''}</td><td class="p-3"><div>${safe(a.appointment_date)}</div><div class="text-xs text-slate-500 mt-1">${safe(a.slot)}</div></td><td class="p-3"><span class="inline-block rounded-full px-2 py-1 text-xs font-bold ${a.status==='approved'?'bg-emerald-100 text-emerald-800':a.status==='rejected'?'bg-rose-100 text-rose-800':'bg-amber-100 text-amber-800'}">${safe(a.status)}</span><div class="text-xs text-slate-600 mt-2">Doctor: ${a.doctor_dispatch_status==='sent'?'<b class="text-emerald-700">Sent to '+safe(a.assigned_doctor_name||'doctor')+'</b>':'Not sent'}</div><div class="text-xs text-slate-600 mt-1">Fee: ₹${Number(a.consultation_fee||0).toLocaleString('en-IN')} · Paid: ₹${Number(a.amount_paid||0).toLocaleString('en-IN')} · Balance: ₹${Math.max(0,Number(a.consultation_fee||0)-Number(a.amount_paid||0)).toLocaleString('en-IN')}</div><div class="text-xs font-bold mt-1 ${a.payment_status==='paid'?'text-emerald-700':a.payment_status==='skipped'?'text-rose-700':'text-amber-700'}">Payment: ${safe(a.payment_status||'unpaid')}</div>${paymentRows.filter(p=>p.appointment_id===a.id).map(p=>'<div class="text-[11px] text-slate-600 mt-1">'+safe(String(p.payment_method||'').replace('_',' '))+' · ₹'+Number(p.amount||0).toLocaleString('en-IN')+(p.narration?' · '+safe(p.narration):'')+'</div>').join('')}${a.payment_skipped?'<div class="text-xs font-extrabold text-rose-700 mt-2">PAYMENT SKIPPED: '+safe(a.payment_skip_reason||'Reason not entered')+'</div>':''}${a.visit_status==='arrived'?'<div class="text-xs font-bold text-emerald-700 mt-1">Patient arrived</div>':''}${a.rejection_reason?'<div class="text-xs text-rose-700 mt-2">Rejection reason: '+safe(a.rejection_reason)+'</div>':''}${a.notification_status ? '<div class="text-[10px] text-slate-400 mt-2">SMS: '+safe(a.notification_status.sms||'not sent')+' · WA: '+safe(a.notification_status.whatsapp||'not sent')+'</div>' : ''}</td><td class="p-3"><div class="flex flex-col gap-2 min-w-32">${a.status==='pending'?`<button data-id="${safe(a.id)}" data-action="approve" class="decision rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 text-xs font-bold">Approve & continue to Doctor handoff</button><button data-id="${safe(a.id)}" data-action="reject" class="decision rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-800 px-3 py-2 text-xs font-bold">Reject with reason</button>`:''}${a.status==='approved'&&a.doctor_dispatch_status!=='sent'?'<button data-id="'+safe(a.id)+'" data-action="dispatch" class="decision rounded-lg bg-teal-700 hover:bg-teal-800 text-white px-3 py-2 text-xs font-bold">Approve collection & send to Doctor</button>':''}${a.status!=='rejected'&&!a.payment_skipped&&Number(a.consultation_fee||0)>Number(a.amount_paid||0)?'<button data-id="'+safe(a.id)+'" data-action="payment" class="decision rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-800 px-3 py-2 text-xs font-bold">Record Payment</button>':''}${a.status==='approved'&&a.doctor_dispatch_status==='sent'&&a.visit_status!=='arrived'&&a.visit_status!=='completed'?'<button data-id="'+safe(a.id)+'" data-action="arrived" class="decision rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 px-3 py-2 text-xs font-bold">Mark arrived</button>':''}${a.status!=='rejected'?'<button data-id="'+safe(a.id)+'" data-action="transfer" class="decision rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 px-3 py-2 text-xs font-bold">Transfer clinic</button>':''}</div></td></tr>`).join('') : '<tr><td colspan="5" class="p-6 text-center text-slate-500">No appointments found.</td></tr>';
+    $('appointmentsBody').innerHTML = rows.length ? rows.map(a => `<tr class="border-t border-slate-100 align-top"><td class="p-3"><div class="font-bold">${safe(a.patient_name)}</div><a class="text-teal-700 hover:underline" href="tel:${safe(a.phone)}">${safe(a.phone)}</a><div class="text-xs text-slate-400 mt-1">${safe(new Date(a.created_at).toLocaleString())}</div></td><td class="p-3"><div class="font-medium">${safe((clinicDirectory.find(x=>x.key===a.clinic_key)||{}).name||a.clinic)}</div>${a.transfer_from_clinic_key?'<div class="text-[11px] text-slate-500 mt-2">Transferred from '+safe((clinicDirectory.find(x=>x.key===a.transfer_from_clinic_key)||{}).shortName||a.transfer_from_clinic_key)+'</div>'+(a.transfer_reason?'<div class="text-[11px] text-slate-500 mt-1">Transfer note: '+safe(a.transfer_reason)+'</div>':''):''}</td><td class="p-3"><div>${safe(a.appointment_date)}</div><div class="text-xs text-slate-500 mt-1">${safe(a.slot)}</div></td><td class="p-3"><span class="inline-block rounded-full px-2 py-1 text-xs font-bold ${a.status==='approved'?'bg-emerald-100 text-emerald-800':a.status==='rejected'?'bg-rose-100 text-rose-800':'bg-amber-100 text-amber-800'}">${safe(a.status)}</span><div class="text-xs text-slate-600 mt-2">Doctor: ${a.doctor_dispatch_status==='sent'?'<b class="text-emerald-700">Sent to '+safe(a.assigned_doctor_name||'doctor')+'</b>':'Not sent'}</div><div class="text-xs text-slate-600 mt-1">Fee: ₹${Number(a.consultation_fee||0).toLocaleString('en-IN')} · Paid: ₹${Number(a.amount_paid||0).toLocaleString('en-IN')} · Balance: ₹${Math.max(0,Number(a.consultation_fee||0)-Number(a.amount_paid||0)).toLocaleString('en-IN')}</div><div class="text-xs font-bold mt-1 ${a.payment_status==='paid'?'text-emerald-700':a.payment_status==='skipped'?'text-rose-700':'text-amber-700'}">Payment: ${safe(a.payment_status||'unpaid')}</div>${paymentRows.filter(p=>p.appointment_id===a.id).map(p=>'<div class="text-[11px] text-slate-600 mt-1">'+safe(String(p.payment_method||'').replace('_',' '))+' · ₹'+Number(p.amount||0).toLocaleString('en-IN')+(p.narration?' · '+safe(p.narration):'')+'</div>').join('')}${a.payment_skipped?'<div class="text-xs font-extrabold text-rose-700 mt-2">PAYMENT SKIPPED: '+safe(a.payment_skip_reason||'Reason not entered')+'</div>':''}${a.visit_status==='arrived'?'<div class="text-xs font-bold text-emerald-700 mt-1">Patient arrived</div>':''}${a.rejection_reason?'<div class="text-xs text-rose-700 mt-2">Rejection reason: '+safe(a.rejection_reason)+'</div>':''}${a.notification_status ? '<div class="text-[10px] text-slate-400 mt-2">SMS: '+safe(a.notification_status.sms||'not sent')+' · WA: '+safe(a.notification_status.whatsapp||'not sent')+'</div>' : ''}</td><td class="p-3"><div class="flex flex-col gap-2 min-w-32">${a.status==='pending'?`<button data-id="${safe(a.id)}" data-action="approve" class="decision rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 text-xs font-bold">Send to Doctor & Collect the Fee</button><button data-id="${safe(a.id)}" data-action="reject" class="decision rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-800 px-3 py-2 text-xs font-bold">Reject with reason</button>`:''}${a.status==='approved'&&a.doctor_dispatch_status!=='sent'?'<button data-id="'+safe(a.id)+'" data-action="dispatch" class="decision rounded-lg bg-teal-700 hover:bg-teal-800 text-white px-3 py-2 text-xs font-bold">Send to Doctor & Collect the Fee</button>':''}${a.status!=='rejected'&&!a.payment_skipped&&Number(a.consultation_fee||0)>Number(a.amount_paid||0)?'<button data-id="'+safe(a.id)+'" data-action="payment" class="decision rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-800 px-3 py-2 text-xs font-bold">Record Payment</button>':''}${a.status==='approved'&&a.doctor_dispatch_status==='sent'&&a.visit_status!=='arrived'&&a.visit_status!=='completed'?'<button data-id="'+safe(a.id)+'" data-action="arrived" class="decision rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 px-3 py-2 text-xs font-bold">Mark arrived</button>':''}${a.status!=='rejected'?'<button data-id="'+safe(a.id)+'" data-action="transfer" class="decision rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 px-3 py-2 text-xs font-bold">Transfer clinic</button>':''}</div></td></tr>`).join('') : '<tr><td colspan="5" class="p-6 text-center text-slate-500">No appointments found.</td></tr>';
   }
   function setupFeeClinicOptions() {
     const options = currentClinicKey==='*' ? clinicDirectory : clinicDirectory.filter(c=>c.key===currentClinicKey);
@@ -222,8 +222,10 @@
     $('handoffFee').textContent=money(fee);
     $('handoffAlreadyPaid').textContent=money(paid);
     $('handoffBalance').textContent=money(balance);
-    $('handoffAmount').value=balance.toFixed(2);
+    $('handoffAmount').value='';
+    $('handoffAmount').placeholder=balance>0?'Balance due: '+money(balance):'No fee due';
     $('handoffAmount').max=balance.toFixed(2);
+    $('handoffAmount').required=balance>0;
     $('handoffReference').value='';
     $('handoffPaymentNarration').value='';
     $('handoffNote').value='';
@@ -234,7 +236,7 @@
     $('handoffSkipDetail').value='';
     $('handoffPaymentFields').classList.remove('hidden');
     $('handoffSkipFields').classList.add('hidden');
-    $('handoffMessage').textContent='Enter the amount received, or mark payment as skipped with a reason.';
+    $('handoffMessage').textContent='Enter how much fee was paid and choose Cash or Bank transfer. This will be saved on the dashboard and sent to Doctor.';
     $('handoffModal').classList.remove('hidden');
     $('handoffAmount').focus();
   }
@@ -259,10 +261,11 @@
       });
       if(error)throw error;
       closeHandoffModal();
-      showError(skip?'Appointment sent to Doctor. Payment skipped; a red alert will appear in the doctor login.':'Appointment sent to Doctor with payment details.');
+      const methodLabel=skip?'payment waived':$('handoffMethod').selectedOptions[0].textContent;
+      showError(skip?'Appointment sent to Doctor. Payment skipped; a red alert will appear in the doctor login.':'Collected '+money(amount)+' via '+methodLabel+' and sent to Doctor. Total paid: '+money(data.amount_paid)+'. Balance: '+money(data.balance)+'. Payment details are now on the clinic dashboard.');
       await Promise.all([loadAppointments(),loadDailySummary()]);
     }catch(err){$('handoffMessage').textContent='Could not send: '+err.message}
-    finally{btn.disabled=false;btn.textContent='Send to Doctor'}
+    finally{btn.disabled=false;btn.textContent='Collect Fee & Send to Doctor'}
   }
   async function markAppointmentArrived(a,button){
     if(!confirm('Mark '+a.patient_name+' as arrived at the clinic?'))return;
@@ -330,8 +333,7 @@
       rejectionReason=prompt('Enter reason for rejecting this appointment (required):')||'';
       if(rejectionReason.trim().length<5){showError('A rejection reason of at least 5 characters is required.');return}
     }
-    const confirmation = action==='approve' ? 'Approve this appointment?' : 'Reject this appointment and send the reason to the patient?';
-    if (!confirm(confirmation)) return;
+    if(action==='reject' && !confirm('Reject this appointment and send the reason to the patient?')) return;
     button.disabled = true; button.textContent = 'Working…'; showError('');
     try {
       if (!appointment || (currentClinicKey !== '*' && appointment.clinic_key !== currentClinicKey)) {
@@ -365,7 +367,7 @@
         const updated=appointments.find(x=>x.id===id)||Object.assign({},appointment,{status:'approved'});
         openHandoffModal(updated);
       }
-    } catch(e) { showError(e.message || 'Could not update appointment.'); button.disabled=false; button.textContent=action==='approve'?'Approve appointment':'Reject with reason'; }
+    } catch(e) { showError(e.message || 'Could not update appointment.'); button.disabled=false; button.textContent=action==='approve'?'Send to Doctor & Collect the Fee':'Reject with reason'; }
   }
   $('loginForm').addEventListener('submit', async e => { e.preventDefault(); $('loginError').textContent=''; if(!client){$('loginError').textContent='Supabase is not configured. Edit config.js first.';return;} const {data,error}=await client.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value}); if(error){$('loginError').textContent=error.message;return;} await ensureAdmin(data.session); });
   $('appointmentsBody').addEventListener('click',e=>{
@@ -376,7 +378,7 @@
   $('dailyDate').addEventListener('change',loadDailySummary); $('transferDoctorBtn').addEventListener('click',recordDoctorRemittance);
   $('handoffForm').addEventListener('submit',submitHandoff); $('closeHandoff').addEventListener('click',closeHandoffModal);
   $('handoffModal').addEventListener('click',e=>{if(e.target.id==='handoffModal')closeHandoffModal()});
-  $('handoffSkipPayment').addEventListener('change',e=>{$('handoffPaymentFields').classList.toggle('hidden',e.target.checked);$('handoffAmount').disabled=e.target.checked;$('handoffAmount').required=!e.target.checked;$('handoffSkipFields').classList.toggle('hidden',!e.target.checked);if(e.target.checked)$('handoffAmount').value='0'});
+  $('handoffSkipPayment').addEventListener('change',e=>{$('handoffPaymentFields').classList.toggle('hidden',e.target.checked);$('handoffAmount').disabled=e.target.checked;$('handoffAmount').required=!e.target.checked && Number($('handoffBalance').textContent.replace(/[^0-9.]/g,''))>0;$('handoffSkipFields').classList.toggle('hidden',!e.target.checked);if(e.target.checked)$('handoffAmount').value='0'});
   $('logoutBtn').addEventListener('click',async()=>{await client.auth.signOut();$('dashboardPanel').classList.add('hidden');$('loginPanel').classList.remove('hidden');$('appointmentsBody').innerHTML='';});
   if (!configured) $('loginError').textContent='Setup required: edit config.js with your Supabase project URL and anon key.';
   if (client) client.auth.getSession().then(({data})=>ensureAdmin(data.session));
