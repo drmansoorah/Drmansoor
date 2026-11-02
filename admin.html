@@ -39,7 +39,7 @@
       </div>
       <section class="bg-white border border-slate-200 rounded-xl p-4 mb-5">
         <div class="flex flex-wrap items-end justify-between gap-4">
-          <div><p class="text-[10px] uppercase tracking-widest font-extrabold text-teal-700">Clinic finance</p><h3 class="font-bold text-lg mt-1">Default doctor consultation fee</h3><p class="text-xs text-slate-500 mt-1">New appointments use this fee. Existing appointment fees remain unchanged.</p></div>
+          <div><p class="text-[10px] uppercase tracking-widest font-extrabold text-teal-700">Clinic finance</p><h3 class="font-bold text-lg mt-1">Default doctor consultation fee</h3><p class="text-xs text-slate-500 mt-1">New approvals and doctor dispatches use this default fee. Existing paid amounts are preserved.</p></div>
           <div class="flex flex-wrap items-end gap-2">
             <label id="feeClinicWrap" class="text-xs font-semibold text-slate-600">Clinic<select id="feeClinicSelect" class="block mt-1 rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white"></select></label>
             <label class="text-xs font-semibold text-slate-600">Fee (INR)<input id="clinicFee" type="number" min="0" max="1000000" step="1" placeholder="Enter fee" class="block mt-1 rounded-lg border border-slate-300 px-3 py-2 text-sm w-36"></label>
@@ -47,7 +47,7 @@
           </div>
         </div><p id="feeMessage" class="text-xs mt-2 text-slate-500">Set the consultation fee for this clinic.</p>
       </section>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-5>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
         <div class="bg-white border rounded-xl p-4"><p class="text-xs text-slate-500">Pending</p><p id="pendingCount" class="text-2xl font-bold">—</p></div>
         <div class="bg-white border rounded-xl p-4"><p class="text-xs text-slate-500">Approved</p><p id="approvedCount" class="text-2xl font-bold">—</p></div>
         <div class="bg-white border rounded-xl p-4"><p class="text-xs text-slate-500">Rejected</p><p id="rejectedCount" class="text-2xl font-bold">—</p></div><div class="bg-white border rounded-xl p-4"><p class="text-xs text-slate-500">Payments collected</p><p id="collectedTotal" class="text-2xl font-bold">₹0</p></div>
