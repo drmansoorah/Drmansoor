@@ -204,6 +204,75 @@ begin
 end;
 $fn$;
 
+-- Server-side appointment decision fallback. The browser first attempts the
+-- configured notification Edge Function; if it is unavailable, this RPC still
+-- records the approval/rejection and runs the existing database approval trigger.
+create or replace function public.clinic_decide_appointment(
+  p_appointment_id uuid,
+  p_action text,
+  p_reason text default null
+) returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $fn$
+declare
+  v_role text := coalesce(auth.jwt()->'app_metadata'->>'role','');
+  v_scope text := coalesce(nullif(auth.jwt()->'app_metadata'->>'clinic_key',''), '*');
+  v_row public.appointments%rowtype;
+  v_target text;
+begin
+  if auth.uid() is null or v_role <> 'admin' then
+    raise exception 'Clinic admin access required';
+  end if;
+  if p_action not in ('approve','reject') then
+    raise exception 'Unsupported appointment decision';
+  end if;
+  if p_action = 'reject' and length(trim(coalesce(p_reason,''))) < 5 then
+    raise exception 'A rejection reason of at least 5 characters is required';
+  end if;
+
+  select * into v_row
+  from public.appointments a
+  where a.id = p_appointment_id
+    and (v_scope = '*' or a.clinic_key = v_scope)
+  for update;
+
+  if not found then
+    raise exception 'Appointment not found in your clinic';
+  end if;
+
+  v_target := case when p_action = 'approve' then 'approved' else 'rejected' end;
+
+  if v_row.status = v_target then
+    return jsonb_build_object('appointment_id',v_row.id,'status',v_row.status,'already_decided',true);
+  end if;
+  if v_row.status <> 'pending' then
+    raise exception 'Only pending appointments can be approved or rejected';
+  end if;
+
+  if p_action = 'approve' then
+    update public.appointments a
+    set status = 'approved',
+        decision_at = now(),
+        consultation_fee = case
+          when coalesce(a.consultation_fee,0) = 0
+            then coalesce((select cs.consultation_fee from public.clinic_settings cs where cs.clinic_key = a.clinic_key),0)
+          else a.consultation_fee
+        end
+    where a.id = p_appointment_id;
+  else
+    update public.appointments
+    set status = 'rejected',
+        decision_at = now(),
+        rejection_reason = left(trim(p_reason),500)
+    where id = p_appointment_id;
+  end if;
+
+  return jsonb_build_object('appointment_id',p_appointment_id,'status',v_target,'already_decided',false);
+end;
+$fn$;
+
 -- Assign an approved appointment to the psychiatrist's work queue.
 create or replace function public.clinic_dispatch_appointment(
   p_appointment_id uuid,
@@ -441,11 +510,13 @@ end;
 $fn$;
 
 revoke all on function public.clinic_save_rejection_reason(uuid,text) from public, anon;
+revoke all on function public.clinic_decide_appointment(uuid,text,text) from public, anon;
 revoke all on function public.clinic_dispatch_appointment(uuid,text) from public, anon;
 revoke all on function public.clinic_set_default_fee(text,numeric) from public, anon;
 revoke all on function public.clinic_record_payment(uuid,numeric,text,text) from public, anon;
 revoke all on function public.clinic_transfer_appointment(uuid,text,text) from public, anon;
 grant execute on function public.clinic_save_rejection_reason(uuid,text) to authenticated;
+grant execute on function public.clinic_decide_appointment(uuid,text,text) to authenticated;
 grant execute on function public.clinic_dispatch_appointment(uuid,text) to authenticated;
 grant execute on function public.clinic_set_default_fee(text,numeric) to authenticated;
 grant execute on function public.clinic_record_payment(uuid,numeric,text,text) to authenticated;
