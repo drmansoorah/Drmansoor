@@ -264,7 +264,10 @@ begin
          count(*) filter (where visit_status='completed')
     into v_arrived,v_completed
   from public.appointments
-  where appointment_date=p_date and (v_scope='*' or clinic_key=v_scope);
+  where visit_status in ('arrived','completed')
+    and arrived_at is not null
+    and (arrived_at at time zone 'Asia/Kolkata')::date=p_date
+    and (v_scope='*' or clinic_key=v_scope);
 
   select coalesce(sum(amount),0),
          coalesce(jsonb_object_agg(method,total), '{}'::jsonb)
