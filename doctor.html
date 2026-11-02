@@ -261,6 +261,7 @@
  function clearSelectedPatient(){
   selectedPatient=null;selectedAppointment=null;currentHistory=[];
   $('patientWorkspace').classList.add('hidden');
+  $('patientEditPanel').classList.add('hidden');
   $('prescriptionForm').classList.add('hidden');
   $('patientStatus').textContent='No patient selected';
   $('historyCount').textContent='0 visits';
@@ -285,6 +286,7 @@
   $('portalCodeMessage').textContent=p.patient_code?'Use View / Generate once to retrieve the saved permanent code.':'Patient portal code will be generated once a patient record is saved.';
   $('prescriptionFor').textContent='Patient: '+(p.full_name||'Patient')+' • '+(currentClinic()?.name||'Selected clinic');
   $('patientWorkspace').classList.remove('hidden');
+  $('patientEditPanel').classList.add('hidden');
   $('prescriptionForm').classList.add('hidden');
  }
  async function selectPatient(p,appointment,loadHistory){
