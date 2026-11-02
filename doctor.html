@@ -309,7 +309,28 @@
   $('prescriptionFor').textContent='Patient: '+(p.full_name||'Patient')+' • '+(currentClinic()?.name||'Selected clinic');
   $('patientWorkspace').classList.remove('hidden');
   $('patientEditPanel').classList.add('hidden');
+  renderDoctorHandoff(selectedAppointment);
   $('prescriptionForm').classList.add('hidden');
+ }
+ function renderDoctorHandoff(a){
+  const panel=$('doctorHandoffPanel');
+  if(!a){panel.classList.add('hidden');return}
+  panel.classList.remove('hidden');
+  const skipped=!!a.payment_skipped;
+  const badge=$('doctorPaymentBadge');
+  badge.textContent=skipped?'PAYMENT SKIPPED':'PAYMENT '+String(a.payment_status||'unpaid').toUpperCase();
+  badge.className='badge '+(skipped?'bg-rose-100 text-rose-800':'bg-emerald-50 text-emerald-700');
+  $('doctorFeeValue').textContent='₹'+Number(a.consultation_fee||0).toLocaleString('en-IN');
+  $('doctorPaidValue').textContent='₹'+Number(a.amount_paid||0).toLocaleString('en-IN');
+  $('doctorBalanceValue').textContent='₹'+Number(a.balance||0).toLocaleString('en-IN');
+  const items=Array.isArray(a.payment_items)?a.payment_items:[];
+  $('doctorPaymentItems').textContent=items.length?'Collection: '+items.map(p=>'₹'+Number(p.amount||0).toLocaleString('en-IN')+' via '+String(p.payment_method||'').replace('_',' ')+(p.narration?' ('+p.narration+')':'')).join(' · '):'No amount collected at clinic handoff.';
+  const reason=$('doctorSkipReason');
+  if(skipped){reason.textContent='Payment skipped: '+(a.payment_skip_reason||'Reason not entered');reason.classList.remove('hidden')}
+  else{reason.classList.add('hidden');reason.textContent=''}
+  const note=$('doctorHandoffNote');
+  if(a.doctor_handoff_note){note.querySelector('span').textContent=a.doctor_handoff_note;note.classList.remove('hidden')}
+  else{note.classList.add('hidden');note.querySelector('span').textContent=''}
  }
  async function selectPatient(p,appointment,loadHistory){
   selectedPatient={
