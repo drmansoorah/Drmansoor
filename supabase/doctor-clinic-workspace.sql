@@ -7,8 +7,7 @@ alter table public.patients
 
 -- Backfill each existing patient from their most recent appointment, matching phone.
 update public.patients p
-set clinic_key = matched.clinic_key
-from lateral (
+set clinic_key = (
   select a.clinic_key
   from public.appointments a
   where regexp_replace(coalesce(a.phone,''),'[^0-9]','','g')
@@ -16,9 +15,16 @@ from lateral (
     and a.clinic_key is not null
   order by a.created_at desc
   limit 1
-) as matched
+)
 where p.clinic_key is null
-  and regexp_replace(coalesce(p.phone,''),'[^0-9]','','g') <> '';
+  and regexp_replace(coalesce(p.phone,''),'[^0-9]','','g') <> ''
+  and exists (
+    select 1
+    from public.appointments a
+    where regexp_replace(coalesce(a.phone,''),'[^0-9]','','g')
+        = regexp_replace(coalesce(p.phone,''),'[^0-9]','','g')
+      and a.clinic_key is not null
+  );
 
 create index if not exists patients_clinic_created_idx
   on public.patients(clinic_key, created_at desc);
