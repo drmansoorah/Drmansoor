@@ -165,7 +165,7 @@ drop policy if exists "Clinic clinicians update assigned prescriptions" on publi
 revoke select on public.appointments from public, anon, authenticated;
 grant select (
   id, patient_name, phone, clinic, clinic_key, appointment_date, slot, status,
-  patient_code, portal_access_enabled, created_at, decision_at, notification_status,
+  created_at, decision_at, notification_status,
   rejection_reason, doctor_dispatch_status, assigned_doctor_name, sent_to_doctor_at,
   consultation_fee, amount_paid, payment_status, transfer_from_clinic_key,
   transfer_reason, transferred_at
