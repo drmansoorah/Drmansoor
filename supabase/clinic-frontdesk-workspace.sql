@@ -89,9 +89,15 @@ create table if not exists public.clinic_appointment_payments (
   amount numeric(10,2) not null check (amount > 0),
   payment_method text not null check (payment_method in ('cash','upi','card','bank_transfer','other')),
   reference text,
+  narration text,
   collected_at timestamptz not null default now(),
   collected_by uuid references auth.users(id)
 );
+
+-- Ensure this column also exists when the table was created by an earlier partial run.
+alter table public.clinic_appointment_payments
+  add column if not exists narration text;
+
 create index if not exists clinic_appointment_payments_clinic_time_idx
   on public.clinic_appointment_payments(clinic_key, collected_at desc);
 create index if not exists clinic_appointment_payments_appointment_idx
