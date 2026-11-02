@@ -44,6 +44,29 @@ insert into public.clinic_settings(clinic_key, consultation_fee)
 values ('mansoor-private',0),('gmc-anantnag',0),('south-kashmir',0)
 on conflict (clinic_key) do nothing;
 
+-- Snapshot the clinic's default doctor fee on every new appointment.
+-- Trigger name sorts after the existing route trigger so clinic_key is known.
+create or replace function public.set_new_appointment_clinic_fee()
+returns trigger
+language plpgsql
+set search_path = public, pg_temp
+as $fee$
+begin
+  if coalesce(new.consultation_fee,0) = 0 and new.clinic_key is not null then
+    select consultation_fee into new.consultation_fee
+    from public.clinic_settings
+    where clinic_key = new.clinic_key;
+    new.consultation_fee := coalesce(new.consultation_fee,0);
+  end if;
+  return new;
+end;
+$fee$;
+
+drop trigger if exists trg_set_new_appointment_clinic_fee on public.appointments;
+create trigger trg_set_new_appointment_clinic_fee
+before insert on public.appointments
+for each row execute function public.set_new_appointment_clinic_fee();
+
 create table if not exists public.clinic_appointment_payments (
   id uuid primary key default gen_random_uuid(),
   appointment_id uuid not null references public.appointments(id) on delete restrict,
