@@ -409,40 +409,97 @@
       if(rejectionReason.trim().length<5){showError('A rejection reason of at least 5 characters is required.');return}
     }
     if(action==='reject' && !confirm('Reject this appointment and send the reason to the patient?')) return;
-    button.disabled = true; button.textContent = 'Working…'; showError('');
+    button.disabled=true;button.textContent='Working…';showError('');
     try {
       if (!appointment || (currentClinicKey !== '*' && appointment.clinic_key !== currentClinicKey)) {
         throw new Error('This appointment is not assigned to your clinic dashboard.');
       }
-      const {data:allowed,error:scopeError} = await client.rpc('admin_can_access_appointment',{p_appointment_id:id});
-      if (scopeError) throw scopeError;
-      if (!allowed) throw new Error('You do not have access to this clinic appointment.');
+      const {data:allowed,error:scopeError}=await client.rpc('admin_can_access_appointment',{p_appointment_id:id});
+      if(scopeError)throw scopeError;
+      if(!allowed)throw new Error('You do not have access to this clinic appointment.');
       if(action==='reject'){
         const {error:reasonError}=await client.rpc('clinic_save_rejection_reason',{p_appointment_id:id,p_reason:rejectionReason.trim()});
         if(reasonError)throw reasonError;
       }
-      const {data:{session}} = await client.auth.getSession();
+
+      const {data:{session}}=await client.auth.getSession();
       let notificationProblem='';
+      let decisionResult=null;
       try {
-        const response = await fetch(window.SUPABASE_CONFIG.url + '/functions/v1/appointment-decision', {method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token,'apikey':window.SUPABASE_CONFIG.anonKey}, body:JSON.stringify({appointment_id:id, action, rejection_reason:rejectionReason.trim()||null})});
-        const result = await response.json().catch(()=>({}));
-        if (!response.ok) notificationProblem=result.error || 'Notification service unavailable ('+response.status+')';
-        else if (result.notifications) {
-          const failed = Object.entries(result.notifications).filter(([k,v])=>v!=='sent').map(([k,v])=>k+': '+v);
-          if (failed.length) notificationProblem=failed.join('; ');
+        const response=await fetch(window.SUPABASE_CONFIG.url+'/functions/v1/appointment-decision',{
+          method:'POST',
+          headers:{
+            'Content-Type':'application/json',
+            'Authorization':'Bearer '+session.access_token,
+            'apikey':window.SUPABASE_CONFIG.anonKey
+          },
+          body:JSON.stringify({appointment_id:id,action,rejection_reason:rejectionReason.trim()||null})
+        });
+        decisionResult=await response.json().catch(()=>({}));
+        if(!response.ok)notificationProblem=decisionResult.error||'Notification service unavailable ('+response.status+')';
+        else if(decisionResult.notifications){
+          const failed=Object.entries(decisionResult.notifications)
+            .filter(([k,v])=>v!=='sent')
+            .map(([k,v])=>k+': '+v);
+          if(failed.length)notificationProblem=failed.join('; ');
         }
-      } catch(notifyError) { notificationProblem=notifyError.message || 'Notification service unavailable'; }
-      if(notificationProblem){
-        const {error:fallbackError}=await client.rpc('clinic_decide_appointment',{p_appointment_id:id,p_action:action,p_reason:rejectionReason.trim()||null});
-        if(fallbackError)throw new Error('Decision/notification service failed: '+notificationProblem+'. Database fallback also failed: '+fallbackError.message);
-        showError('Appointment decision saved. Automatic notification was unavailable; please contact the patient manually. '+notificationProblem);
+      } catch(notifyError) {
+        notificationProblem=notifyError.message||'Notification service unavailable';
       }
+
+      if(notificationProblem){
+        const {error:fallbackError}=await client.rpc('clinic_decide_appointment',{
+          p_appointment_id:id,p_action:action,p_reason:rejectionReason.trim()||null
+        });
+        if(fallbackError)throw new Error('Decision/notification service failed: '+notificationProblem+'. Database fallback also failed: '+fallbackError.message);
+      }
+
+      let rejectionWhatsappStatus='';
+      if(action==='reject'){
+        const notifications=decisionResult&&decisionResult.notifications&&typeof decisionResult.notifications==='object'
+          ? decisionResult.notifications : {};
+        const whatsappWasSent=Object.entries(notifications).some(([key,value])=>
+          key.toLowerCase().includes('whatsapp') && value==='sent'
+        );
+
+        // The original decision function may already have sent a rejection WhatsApp.
+        // Call the dedicated reason-aware function only when it did not report WhatsApp sent.
+        if(whatsappWasSent){
+          rejectionWhatsappStatus='The existing notification service reported a WhatsApp message as sent.';
+        } else {
+          try {
+            const {data:waData,error:waError}=await client.functions.invoke('clinic-patient-whatsapp-rejection',{
+              body:{appointment_id:id}
+            });
+            if(waError){
+              let detail=waError.message||'Rejection WhatsApp function call failed.';
+              try{const payload=await waError.context.json();detail=payload.error||payload.message||detail}catch(_){}
+              throw new Error(detail);
+            }
+            if(!waData||!waData.ok)throw new Error((waData&&waData.error)||'Rejection WhatsApp was not accepted.');
+            rejectionWhatsappStatus=waData.skipped
+              ? 'WhatsApp skipped: '+waData.message
+              : (waData.already_sent?'Rejection WhatsApp was already sent.':'Rejection WhatsApp accepted by Meta.');
+          } catch(waError) {
+            rejectionWhatsappStatus='Rejection WhatsApp not sent: '+(waError.message||'Unknown WhatsApp error');
+          }
+        }
+      }
+
       await loadAppointments();
       if(action==='approve'){
         const updated=appointments.find(x=>x.id===id)||Object.assign({},appointment,{status:'approved'});
         openHandoffModal(updated);
+      } else if(action==='reject') {
+        showError('Appointment rejected. '+(notificationProblem?'Other notification status: '+notificationProblem+'. ':'')+rejectionWhatsappStatus);
+      } else if(notificationProblem) {
+        showError('Appointment decision saved, but a notification could not be sent: '+notificationProblem);
       }
-    } catch(e) { showError(e.message || 'Could not update appointment.'); button.disabled=false; button.textContent=action==='approve'?'Send to Doctor & Collect the Fee':'Reject with reason'; }
+    } catch(e) {
+      showError(e.message||'Could not update appointment.');
+      button.disabled=false;
+      button.textContent=action==='approve'?'Send to Doctor & Collect the Fee':'Reject with reason';
+    }
   }
   $('loginForm').addEventListener('submit', async e => { e.preventDefault(); $('loginError').textContent=''; if(!client){$('loginError').textContent='Supabase is not configured. Edit config.js first.';return;} const {data,error}=await client.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value}); if(error){$('loginError').textContent=error.message;return;} await ensureAdmin(data.session); });
   $('appointmentsBody').addEventListener('click',e=>{
