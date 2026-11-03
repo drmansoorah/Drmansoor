@@ -97,7 +97,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: appointment, error: appointmentError } = await admin
       .from("appointments")
-      .select("id,patient_name,phone,clinic,clinic_key,appointment_date,status,rejection_reason,communication_consent")
+      .select("id,patient_name,phone,clinic,clinic_key,appointment_date,slot,status,communication_consent")
       .eq("id", appointmentId)
       .maybeSingle();
 
@@ -115,11 +115,6 @@ Deno.serve(async (req: Request) => {
         skipped: true,
         message: "No WhatsApp sent because appointment communication consent is not recorded.",
       });
-    }
-
-    const reason = String(appointment.rejection_reason || "").trim();
-    if (reason.length < 5) {
-      return respond(409, { error: "A saved rejection reason is required before sending WhatsApp." });
     }
 
     const recipient = normalizePhone(appointment.phone || "");
@@ -148,7 +143,7 @@ Deno.serve(async (req: Request) => {
       String(appointment.patient_name || "Patient").slice(0, 100),
       clinicName,
       String(appointment.appointment_date || "To be confirmed"),
-      reason.slice(0, 500),
+      String(appointment.slot || "Time to be confirmed"),
     ];
 
     let logId: string;
