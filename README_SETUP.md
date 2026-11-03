@@ -105,6 +105,37 @@ Mark a sent appointment as `Arrived` when the patient presents. The daily close-
 
 The daily report and payment/remittance ledger are operational records; they are not a receipt gateway or bank reconciliation. Actual receipt, transfer and bank settlement must still be verified by the clinic.
 
+### Patient WhatsApp message when an appointment is rejected
+
+When an admin clicks **Reject with reason**, the dashboard saves the reason and records the rejection first. If the existing `appointment-decision` notification response does not report a WhatsApp send as successful, the dashboard invokes `clinic-patient-whatsapp-rejection`. The rejection function checks that the appointment is rejected, a reason is saved, the patient has `communication_consent = true`, and the admin is assigned to the clinic.
+
+1. Run `supabase/clinic-whatsapp-rejection.sql` in Supabase SQL Editor once.
+2. In Meta WhatsApp Manager, create and obtain approval for a **Utility** template named `appointment_rejection_with_reason`, language `English (en)`, with this exact body and five variables:
+
+```text
+Hello *{{1}}*,
+
+We are sorry, but your appointment request at *{{2}}* for *{{3}}* could not be accepted.
+
+Reason: *{{4}}*
+
+For assistance or to request another appointment, please contact the clinic desk at *{{5}}*.
+
+Thank you.
+```
+
+Variables: `{{1}}` patient name; `{{2}}` clinic name; `{{3}}` appointment date; `{{4}}` saved rejection reason; `{{5}}` clinic desk phone.
+
+3. Set the Supabase Edge Function secret `WHATSAPP_TEMPLATE_REJECTED=appointment_rejection_with_reason`. The existing Meta access token, phone number ID, language, API version and clinic desk phone secrets are reused.
+4. Deploy both functions:
+
+```bash
+supabase functions deploy clinic-patient-whatsapp-rejection --project-ref zzxehneqvnmprlwcohkv
+supabase functions deploy clinic-patient-whatsapp --project-ref zzxehneqvnmprlwcohkv
+```
+
+The rejection function does not send if the patient has not consented to appointment-related messages. It stores a per-appointment send log so a successfully accepted rejection message is not sent twice. Meta acceptance is not a delivery receipt; check WhatsApp Manager for final delivery status.
+
 ### Patient WhatsApp message when sent to Doctor
 
 After the clinic submits `Collect Fee & Send to Doctor`, the handoff form has a separate checkbox to confirm the patient's appointment-related WhatsApp consent. Tick it only after confirming the patient agreed to these updates. The appointment is still sent to Doctor if the box is left unticked; no WhatsApp message is sent in that case.
