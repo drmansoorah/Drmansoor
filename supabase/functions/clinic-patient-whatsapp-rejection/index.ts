@@ -26,15 +26,6 @@ function displayClinic(value: unknown): string {
   return raw.includes("::") ? raw.split("::").slice(1).join("::") : raw;
 }
 
-function clinicDeskPhone(clinicKey: string): string {
-  const configured: Record<string, string> = {
-    "mansoor-private": Deno.env.get("CLINIC_PHONE_MANSOOR_PRIVATE") || "+91 9906927006",
-    "gmc-anantnag": Deno.env.get("CLINIC_PHONE_GMC_ANANTNAG") || "",
-    "south-kashmir": Deno.env.get("CLINIC_PHONE_SOUTH_KASHMIR") || "",
-  };
-  return String(configured[clinicKey] || "").trim();
-}
-
 function keyFromCollection(name: string): string {
   const raw = Deno.env.get(name) || "";
   if (!raw) return "";
@@ -63,7 +54,7 @@ Deno.serve(async (req: Request) => {
     const phoneNumberId = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID") || "";
     // Create/approve this template in Meta WhatsApp Manager before sending.
     const templateName = Deno.env.get("WHATSAPP_TEMPLATE_REJECTED") ||
-      "appointment_rejection_with_reason";
+      "appointment_request_update";
     const language = Deno.env.get("WHATSAPP_TEMPLATE_LANGUAGE") || "en";
     const apiVersion = Deno.env.get("WHATSAPP_API_VERSION") || "v26.0";
 
@@ -133,11 +124,6 @@ Deno.serve(async (req: Request) => {
 
     const recipient = normalizePhone(appointment.phone || "");
     const clinicName = displayClinic(appointment.clinic).slice(0, 120);
-    const deskPhone = clinicDeskPhone(String(appointment.clinic_key || ""));
-    if (!deskPhone) {
-      return respond(503, { error: "The clinic desk phone number is not configured for this clinic." });
-    }
-
     const { data: existing, error: existingError } = await admin
       .from("clinic_whatsapp_rejection_log")
       .select("id,status,provider_message_id")
@@ -163,7 +149,6 @@ Deno.serve(async (req: Request) => {
       clinicName,
       String(appointment.appointment_date || "To be confirmed"),
       reason.slice(0, 500),
-      deskPhone,
     ];
 
     let logId: string;
