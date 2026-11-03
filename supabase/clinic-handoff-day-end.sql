@@ -309,12 +309,34 @@ security definer
 set search_path = public, pg_temp
 as $fn$
 declare
-  v_role text := coalesce(auth.jwt()->'app_metadata'->>'role','');
-  v_scope text := coalesce(nullif(auth.jwt()->'app_metadata'->>'clinic_key',''), '*');
+  v_user_id uuid := auth.uid();
+  v_app_meta jsonb := '{}'::jsonb;
+  v_role text;
+  v_scope text;
   v_collected numeric(12,2);
   v_remitted numeric(12,2);
 begin
-  if auth.uid() is null or v_role <> 'admin' then raise exception 'Clinic admin access required'; end if;
+  if v_user_id is null then
+    raise exception 'Your login session is missing. Sign out and sign in again.';
+  end if;
+
+  -- Prefer the signed JWT claims, with a fallback to Supabase's protected
+  -- app_metadata row when the browser holds an older access token.
+  select coalesce(u.raw_app_meta_data,'{}'::jsonb)
+    into v_app_meta
+  from auth.users u
+  where u.id = v_user_id;
+
+  v_role := coalesce(nullif(auth.jwt()->'app_metadata'->>'role',''),v_app_meta->>'role','');
+  v_scope := coalesce(
+    nullif(auth.jwt()->'app_metadata'->>'clinic_key',''),
+    nullif(v_app_meta->>'clinic_key',''),
+    '*'
+  );
+
+  if v_role <> 'admin' then
+    raise exception 'Clinic admin access required. Verify role=admin in Supabase Auth app_metadata.';
+  end if;
   if p_amount is null or p_amount<=0 then raise exception 'Enter a transfer amount greater than zero'; end if;
   if p_method not in ('cash','bank_transfer','other') then raise exception 'Select cash, bank transfer or other'; end if;
   if length(trim(coalesce(p_narration,'')))<3 then raise exception 'Enter a transfer narration'; end if;
