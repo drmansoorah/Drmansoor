@@ -25,19 +25,27 @@ alter table public.clinic_whatsapp_handoff_log enable row level security;
 revoke all on public.clinic_whatsapp_handoff_log from public, anon, authenticated;
 grant all on public.clinic_whatsapp_handoff_log to service_role;
 
--- In Meta WhatsApp Manager, create and get APPROVED utility template:
+-- In Meta WhatsApp Manager, create and get APPROVED Utility template:
 -- Name: appointment_forwarded_to_doctor
 -- Language: English (en)
--- Category: Utility
--- Body (8 positional variables):
+-- Body (5 positional variables):
 -- Hello {{1}},
--- Your appointment at {{2}} on {{3}} ({{4}}) has been approved and forwarded to Dr. Mansoor.
--- Consultation fee: {{5}}
--- Amount received: {{6}}
--- Payment mode: {{7}}
--- Payment status: {{8}}
--- For queries, please contact your clinic desk.
--- Clinic Team
 --
--- The website booking form already requires appointment-related SMS/WhatsApp consent.
--- The clinic handoff screen also asks staff to confirm consent before sending.
+-- Your appointment at {{2}} on {{3}} during {{4}} has been approved by Prof. (Dr.) Mansoor Ahmad.
+--
+-- *Please note:* This appointment is subject to payment of the applicable doctor's consultation fee.
+-- Kindly contact the clinic desk ({{5}}) for fee details before your visit.
+--
+-- Thank you.
+--
+-- Variables: {{1}} patient name; {{2}} clinic name; {{3}} date;
+-- {{4}} timing/slot; {{5}} clinic desk phone number.
+--
+-- Clinic phone secrets:
+-- CLINIC_PHONE_MANSOOR_PRIVATE defaults to the published +91 9906927006,
+-- CLINIC_PHONE_GMC_ANANTNAG and CLINIC_PHONE_SOUTH_KASHMIR must be configured
+-- with the respective verified clinic desk numbers before messages can be sent
+-- from those clinics.
+--
+-- The website booking form requires appointment-related WhatsApp consent.
+-- The clinic handoff screen also asks staff to reconfirm consent before sending.
