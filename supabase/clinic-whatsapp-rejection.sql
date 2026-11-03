@@ -27,15 +27,17 @@ grant all on public.clinic_whatsapp_rejection_log to service_role;
 -- In Meta WhatsApp Manager, create and get APPROVED Utility template:
 -- Name: appointment_request_update
 -- Language: English (en)
--- Body should use exactly four BODY placeholders:
+-- Body should use exactly four BODY placeholders matching Meta:
 -- Hello *{{1}}*,
 --
--- We are sorry, but your appointment request at *{{2}}* for *{{3}}* could not be accepted.
+-- Your appointment request at *{{2}}* on *{{3}}* during *{{4}}*
+-- could not be approved.
 --
--- Reason: *{{4}}*
+-- We regret the inconvenience. Please contact the clinic desk to discuss
+-- another available date or time.
 --
 -- Thank you.
 --
 -- Variables: {{1}} patient name; {{2}} clinic name; {{3}} appointment date;
--- {{4}} saved rejection reason.
+-- {{4}} appointment time slot. Rejection reason is not sent in this template.
 -- The patient booking form requires appointment-related communication consent.
