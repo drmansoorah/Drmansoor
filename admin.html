@@ -101,6 +101,10 @@
           <label class="text-xs font-bold text-rose-800">Reason details<input id="handoffSkipDetail" class="block mt-1 w-full rounded-lg border border-rose-300 bg-white px-3 py-2.5 text-sm" placeholder="Optional short detail"></label>
         </div>
         <label class="block text-xs font-bold text-slate-600 mt-4">Note for Doctor (known patient / recommendation / other handoff context)<textarea id="handoffNote" rows="3" class="block mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm" placeholder="This note is sent to the doctor only. Do not enter diagnosis or treatment details here."></textarea></label>
+        <label class="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 mt-4">
+          <input id="handoffWhatsappConsent" type="checkbox" class="mt-1">
+          <span><b class="text-sm text-emerald-900">Send appointment confirmation to patient's WhatsApp</b><span class="block text-xs text-emerald-800 mt-1">Tick only if the patient agreed to appointment-related WhatsApp updates. Website bookings require this consent at submission. The message includes appointment and fee/payment summary only.</span></span>
+        </label>
         <div class="flex flex-wrap items-center justify-between gap-3 border-t pt-4 mt-4"><p id="handoffMessage" class="text-xs text-slate-500">Enter the amount received. The payment will be recorded and the appointment sent to Doctor.</p><button id="sendDoctorConfirm" class="rounded-lg bg-teal-700 hover:bg-teal-800 text-white px-5 py-3 text-sm font-extrabold">Collect Fee & Send to Doctor</button></div>
       </form>
     </div>
@@ -230,6 +234,7 @@
     $('handoffReference').value='';
     $('handoffPaymentNarration').value='';
     $('handoffNote').value='';
+    $('handoffWhatsappConsent').checked=false;
     $('handoffSkipPayment').checked=false;
     $('handoffAmount').disabled=false;
     $('handoffAmount').required=balance>0;
@@ -263,9 +268,26 @@
         p_handoff_note:$('handoffNote').value.trim()||null
       });
       if(error)throw error;
-      closeHandoffModal();
       const methodLabel=skip?'payment waived':$('handoffMethod').selectedOptions[0].textContent;
-      showError(skip?'Appointment sent to Doctor. Payment skipped; a red alert will appear in the doctor login.':'Collected '+money(amount)+' via '+methodLabel+' and sent to Doctor. Total paid: '+money(data.amount_paid)+'. Balance: '+money(data.balance)+'. Payment details are now on the clinic dashboard.');
+      let whatsappStatus='Patient WhatsApp message not sent because consent was not confirmed in the handoff form.';
+      if($('handoffWhatsappConsent').checked){
+        try{
+          const {data:waData,error:waError}=await client.functions.invoke('clinic-patient-whatsapp',{
+            body:{appointment_id:a.id,patient_consent_confirmed:true}
+          });
+          if(waError){
+            let detail=waError.message||'WhatsApp function call failed.';
+            try{const payload=await waError.context.json();detail=payload.error||payload.message||detail}catch(_){}
+            throw new Error(detail);
+          }
+          if(!waData||!waData.ok)throw new Error((waData&&waData.error)||'WhatsApp provider did not accept the message.');
+          whatsappStatus=waData.already_sent?'Patient WhatsApp confirmation was already sent.':'Patient WhatsApp confirmation accepted by Meta.';
+        }catch(waError){
+          whatsappStatus='WhatsApp not sent: '+(waError.message||'Unknown WhatsApp error');
+        }
+      }
+      closeHandoffModal();
+      showError((skip?'Appointment sent to Doctor. Payment skipped; a red alert will appear in the doctor login.':'Collected '+money(amount)+' via '+methodLabel+' and sent to Doctor. Total paid: '+money(data.amount_paid)+'. Balance: '+money(data.balance)+'. Payment details are now on the clinic dashboard.')+' '+whatsappStatus);
       await Promise.all([loadAppointments(),loadDailySummary()]);
     }catch(err){$('handoffMessage').textContent='Could not send: '+err.message}
     finally{btn.disabled=false;btn.textContent='Collect Fee & Send to Doctor'}
