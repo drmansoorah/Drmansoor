@@ -278,7 +278,7 @@
   }
   function indiaDayRange(dateValue){
     const parts=String(dateValue||'').split('-');
-    if(parts.length!==3||parts.some(part=>!/^\\d+$/.test(part)))return null;
+    if(parts.length!==3||parts.some(part=>part===''||!Number.isFinite(Number(part))))return null;
     const year=Number(parts[0]),month=Number(parts[1]),day=Number(parts[2]);
     const start=new Date(Date.UTC(year,month-1,day)-330*60*1000);
     const end=new Date(Date.UTC(year,month-1,day+1)-330*60*1000);
