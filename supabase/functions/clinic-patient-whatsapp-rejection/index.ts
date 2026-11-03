@@ -12,7 +12,7 @@ function respond(status: number, body: Record<string, unknown>) {
 }
 
 function normalizePhone(value: string): string {
-  let digits = String(value || "").replace(/\\D/g, "");
+  let digits = String(value || "").replace(/\D/g, "");
   if (digits.length === 10) digits = "91" + digits;
   else if (digits.length === 11 && digits.startsWith("0")) digits = "91" + digits.slice(1);
   if (digits.length < 10 || digits.length > 15) {
@@ -73,7 +73,7 @@ Deno.serve(async (req: Request) => {
     if (!waToken || !phoneNumberId) {
       return respond(503, { error: "WhatsApp Cloud API token or Phone Number ID is not configured." });
     }
-    if (!/^v\\d+\\.0$/.test(apiVersion)) {
+    if (!/^v\d+\.0$/.test(apiVersion)) {
       return respond(500, { error: "WHATSAPP_API_VERSION must look like v26.0." });
     }
 
