@@ -107,3 +107,45 @@ A clinic admin approves a pending appointment. The dashboard then opens the hand
 Mark a sent appointment as `Arrived` when the patient presents. The daily close-out panel counts arrivals and payments collected on the selected India-local date. The clinic can record an amount transferred to the doctor by cash, bank transfer or other method with a narration. The database prevents recording a transfer greater than that day's unremitted collections. The Doctor Workspace displays the remittance records.
 
 The daily report and payment/remittance ledger are operational records; they are not a receipt gateway or bank reconciliation. Actual receipt, transfer and bank settlement must still be verified by the clinic.
+
+### Patient WhatsApp message when sent to Doctor
+
+After the clinic submits `Collect Fee & Send to Doctor`, the handoff form has a separate confirmation checkbox for the patient's WhatsApp opt-in. Tick it only after confirming the patient agreed to appointment-related WhatsApp updates. The appointment is still sent to Doctor if this box is left unticked; no WhatsApp message is sent in that case.
+
+1. Run `supabase/clinic-whatsapp-handoff.sql` in Supabase SQL Editor after `clinic-handoff-day-end.sql`.
+2. In Meta WhatsApp Manager, create a **Utility** template named `appointment_forwarded_to_doctor`, language `English (en)`, with this exact body and eight positional variables:
+
+```text
+Hello {{1}},
+Your appointment at {{2}} on {{3}} ({{4}}) has been approved and forwarded to Dr. Mansoor.
+Consultation fee: {{5}}
+Amount received: {{6}}
+Payment mode: {{7}}
+Payment status: {{8}}
+For queries, please contact your clinic desk.
+Clinic Team
+```
+
+3. Add server-side Supabase Edge Function secrets (never place the token in `config.js`, HTML, or Git):
+
+```bash
+supabase secrets set --project-ref zzxehneqvnmprlwcohkv \
+  WHATSAPP_ACCESS_TOKEN=YOUR_LONG_LIVED_META_TOKEN \
+  WHATSAPP_PHONE_NUMBER_ID=YOUR_META_PHONE_NUMBER_ID \
+  WHATSAPP_TEMPLATE_HANDOFF=appointment_forwarded_to_doctor \
+  WHATSAPP_TEMPLATE_LANGUAGE=en \
+  WHATSAPP_API_VERSION=v26.0 \
+  ALLOWED_ORIGIN=https://drmansoor.vercel.app
+```
+
+Make sure the project has `SUPABASE_URL`, `SUPABASE_ANON_KEY` (or publishable key), and `SUPABASE_SERVICE_ROLE_KEY` available to Edge Functions as secrets. The service-role key must remain server-side.
+
+4. Deploy the Edge Function from the repository root:
+
+```bash
+supabase functions deploy clinic-patient-whatsapp --project-ref zzxehneqvnmprlwcohkv
+```
+
+The function verifies the signed-in clinic-admin JWT and clinic scope, reads only appointment/payment summary fields, and sends an approved Meta template to the patient's number. It does not send clinical concern, diagnosis, medicines, or prescription details. A unique per-appointment send log prevents duplicate successful messages. Failed sends can be retried after correcting the Meta configuration.
+
+The dashboard reports whether Meta accepted the template request. Provider acceptance is **not** proof of handset delivery; check WhatsApp Manager/webhook delivery status for final delivery. Template approval, valid patient opt-in, Meta business verification and messaging limits remain provider-side requirements.
