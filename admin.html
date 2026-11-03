@@ -223,20 +223,21 @@
     $('handoffAlreadyPaid').textContent=money(paid);
     $('handoffBalance').textContent=money(balance);
     $('handoffAmount').value='';
-    $('handoffAmount').placeholder=balance>0?'Balance due: '+money(balance):'No fee due';
-    $('handoffAmount').max=balance.toFixed(2);
+    $('handoffAmount').placeholder=fee<=0?'Set clinic fee in Clinic Finance':balance>0?'Balance due: '+money(balance):'No balance due';
+    if(balance>0)$('handoffAmount').max=balance.toFixed(2);
+    else $('handoffAmount').removeAttribute('max');
     $('handoffAmount').required=balance>0;
     $('handoffReference').value='';
     $('handoffPaymentNarration').value='';
     $('handoffNote').value='';
     $('handoffSkipPayment').checked=false;
     $('handoffAmount').disabled=false;
-    $('handoffAmount').required=true;
+    $('handoffAmount').required=balance>0;
     $('handoffSkipReason').value='';
     $('handoffSkipDetail').value='';
     $('handoffPaymentFields').classList.remove('hidden');
     $('handoffSkipFields').classList.add('hidden');
-    $('handoffMessage').textContent='Enter how much fee was paid and choose Cash or Bank transfer. This will be saved on the dashboard and sent to Doctor.';
+    $('handoffMessage').textContent=fee<=0?'Consultation fee is ₹0. First save the actual doctor consultation fee in Clinic Finance, then refresh this lead.':balance<=0?'No balance is due. You can send this already-paid appointment to Doctor.':'Enter how much fee was paid and choose Cash or Bank transfer. The amount cannot exceed the remaining fee balance.';
     $('handoffModal').classList.remove('hidden');
     $('handoffAmount').focus();
   }
@@ -245,7 +246,9 @@
     e.preventDefault();
     const a=handoffAppointment;if(!a)return;
     const skip=$('handoffSkipPayment').checked;
+    const fee=Number(a.consultation_fee||$('clinicFee').value||0);
     const amount=skip?0:Number($('handoffAmount').value||0);
+    if(!skip&&fee<=0){$('handoffMessage').textContent='Consultation fee is currently ₹0. Save the actual fee in Clinic Finance and refresh this appointment before collecting payment.';return}
     if(skip&&!$('handoffSkipReason').value){$('handoffMessage').textContent='Select a reason for skipping payment.';return}
     const skipReason=skip?$('handoffSkipReason').value+($('handoffSkipDetail').value.trim()?': '+$('handoffSkipDetail').value.trim():''):null;
     if(!skip&&Number($('handoffBalance').textContent.replace(/[^0-9.]/g,''))>0&&amount<=0){$('handoffMessage').textContent='Enter amount collected or select Skip payment.';return}
