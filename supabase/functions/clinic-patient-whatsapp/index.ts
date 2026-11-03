@@ -48,10 +48,24 @@ Deno.serve(async (req: Request) => {
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+    // Support both legacy Supabase environment variables and the newer
+    // JSON key collections automatically injected by Supabase Edge Runtime.
+    const keyFromCollection = (name: string): string => {
+      const raw = Deno.env.get(name) || "";
+      if (!raw) return "";
+      try {
+        const parsed = JSON.parse(raw);
+        return typeof parsed?.default === "string" ? parsed.default : "";
+      } catch {
+        return "";
+      }
+    };
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ||
-      Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || "";
+      Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ||
+      keyFromCollection("SUPABASE_PUBLISHABLE_KEYS");
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ||
-      Deno.env.get("SUPABASE_SECRET_KEY") || "";
+      Deno.env.get("SUPABASE_SECRET_KEY") ||
+      keyFromCollection("SUPABASE_SECRET_KEYS");
     const waToken = Deno.env.get("WHATSAPP_ACCESS_TOKEN") || "";
     const phoneNumberId = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID") || "";
     const templateName = Deno.env.get("WHATSAPP_TEMPLATE_HANDOFF") || "";
