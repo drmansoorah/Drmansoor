@@ -276,22 +276,63 @@
     try{const {error}=await client.rpc('clinic_mark_arrived',{p_appointment_id:a.id});if(error)throw error;await Promise.all([loadAppointments(),loadDailySummary()]);}
     catch(e){showError('Could not mark arrival: '+e.message);button.disabled=false;button.textContent='Mark arrived'}
   }
+  function indiaDayRange(dateValue){
+    const match=String(dateValue||'').match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);
+    if(!match)return null;
+    const year=Number(match[1]),month=Number(match[2]),day=Number(match[3]);
+    const start=new Date(Date.UTC(year,month-1,day)-330*60*1000);
+    const end=new Date(Date.UTC(year,month-1,day+1)-330*60*1000);
+    return {start:start.toISOString(),end:end.toISOString()};
+  }
   async function loadDailySummary(){
     if(!client||!$('dailyDate').value)return;
-    const {data,error}=await client.rpc('clinic_daily_summary',{p_date:$('dailyDate').value});
-    if(error){$('remittanceMessage').textContent='Daily summary: '+error.message;return}
-    $('dailyArrived').textContent=data.patients_arrived||0;
-    $('dailyCollected').textContent=money(data.total_collected);
-    $('dailyRemitted').textContent=money(data.transferred_to_doctor);
-    $('dailyMethods').textContent='By method: '+Object.entries(data.by_method||{}).map(([k,v])=>k.replace('_',' ')+': '+money(v)).join(' · ');
-    $('remittanceMessage').textContent='Available to transfer: '+money(data.available_to_transfer);
-    $('collectedTotal').textContent=money(data.total_collected);
-    $('remittanceAmount').max=Number(data.available_to_transfer||0).toFixed(2);
-    if(!Number($('remittanceAmount').value||0)&&Number(data.available_to_transfer||0)>0)$('remittanceAmount').value=Number(data.available_to_transfer).toFixed(2);
-    if(currentClinicKey!=='*'){
-      const {data:transfers,error:transferError}=await client.from('clinic_doctor_remittances').select('amount,transfer_method,narration,transferred_at').eq('clinic_key',currentClinicKey).eq('remittance_date',$('dailyDate').value).order('transferred_at',{ascending:false});
-      $('dailyRemittanceHistory').innerHTML=transferError?'<p class="text-rose-600">Transfer history: '+safe(transferError.message)+'</p>':(transfers||[]).map(t=>'<p class="rounded-lg bg-slate-50 border border-slate-100 p-2"><b>Doctor transfer: ₹'+Number(t.amount||0).toLocaleString('en-IN')+'</b> · '+safe(String(t.transfer_method||'').replace('_',' '))+' · '+safe(new Date(t.transferred_at).toLocaleTimeString())+'<br>'+safe(t.narration||'')+'</p>').join('');
+    const dateValue=$('dailyDate').value,range=indiaDayRange(dateValue);
+    if(!range){$('remittanceMessage').textContent='Invalid report date. Please select the date again.';return}
+    $('dailyMethods').textContent='Loading payment ledger…';
+    $('remittanceMessage').textContent='Calculating collected and transferable amount…';
+    let paymentsQuery=client.from('clinic_appointment_payments')
+      .select('amount,payment_method,collected_at,clinic_key')
+      .gte('collected_at',range.start).lt('collected_at',range.end);
+    if(currentClinicKey!=='*')paymentsQuery=paymentsQuery.eq('clinic_key',currentClinicKey);
+    let remittancesQuery=client.from('clinic_doctor_remittances')
+      .select('amount,transfer_method,narration,transferred_at,clinic_key')
+      .eq('remittance_date',dateValue);
+    if(currentClinicKey!=='*')remittancesQuery=remittancesQuery.eq('clinic_key',currentClinicKey);
+    let arrivalsQuery=client.from('appointments')
+      .select('id,clinic_key,visit_status,arrived_at')
+      .gte('arrived_at',range.start).lt('arrived_at',range.end)
+      .in('visit_status',['arrived','completed']);
+    if(currentClinicKey!=='*')arrivalsQuery=arrivalsQuery.eq('clinic_key',currentClinicKey);
+    const [paymentsResult,remittancesResult,arrivalsResult]=await Promise.all([paymentsQuery,remittancesQuery,arrivalsQuery]);
+    if(paymentsResult.error){
+      $('dailyCollected').textContent='—';$('collectedTotal').textContent='—';
+      $('dailyMethods').textContent='Payment ledger error: '+paymentsResult.error.message;
+      $('remittanceMessage').textContent='Cannot calculate transfer until payment records can be read.';
+      return;
     }
+    const payments=paymentsResult.data||[];
+    const totalCollected=payments.reduce((sum,p)=>sum+Number(p.amount||0),0);
+    const byMethod={};
+    payments.forEach(p=>{const method=p.payment_method||'other';byMethod[method]=(byMethod[method]||0)+Number(p.amount||0)});
+    $('dailyCollected').textContent=money(totalCollected);
+    $('collectedTotal').textContent=money(totalCollected);
+    $('dailyMethods').textContent='By method: '+(Object.keys(byMethod).length?Object.entries(byMethod).map(([k,v])=>k.replace('_',' ')+': '+money(v)).join(' · '):'No payment entries for this date')+' · '+payments.length+' payment entr'+(payments.length===1?'y':'ies');
+    if(arrivalsResult.error)$('dailyArrived').textContent='—';
+    else $('dailyArrived').textContent=(arrivalsResult.data||[]).length;
+    if(remittancesResult.error){
+      $('dailyRemitted').textContent='—';
+      $('remittanceMessage').textContent='Remittance history error: '+remittancesResult.error.message;
+      $('dailyRemittanceHistory').innerHTML='<p class="text-rose-600">Could not load transfer history: '+safe(remittancesResult.error.message)+'</p>';
+      return;
+    }
+    const transfers=remittancesResult.data||[];
+    const totalRemitted=transfers.reduce((sum,t)=>sum+Number(t.amount||0),0);
+    const available=Math.max(totalCollected-totalRemitted,0);
+    $('dailyRemitted').textContent=money(totalRemitted);
+    $('remittanceMessage').textContent='Available to transfer: '+money(available)+(payments.length?' · '+payments.length+' ledger entries':' · No fee collection found in the payment ledger for this date');
+    $('remittanceAmount').max=available.toFixed(2);
+    if(!Number($('remittanceAmount').value||0)&&available>0)$('remittanceAmount').value=available.toFixed(2);
+    $('dailyRemittanceHistory').innerHTML=transfers.map(t=>'<p class="rounded-lg bg-slate-50 border border-slate-100 p-2"><b>Doctor transfer: ₹'+Number(t.amount||0).toLocaleString('en-IN')+'</b> · '+safe(String(t.transfer_method||'').replace('_',' '))+' · '+safe(new Date(t.transferred_at).toLocaleTimeString())+'<br>'+safe(t.narration||'')+'</p>').join('');
   }
   async function recordDoctorRemittance(){
     const amount=Number($('remittanceAmount').value||0), narration=$('remittanceNarration').value.trim();
