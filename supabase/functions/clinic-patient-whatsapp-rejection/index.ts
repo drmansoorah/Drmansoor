@@ -21,9 +21,16 @@ function normalizePhone(value: string): string {
   return digits;
 }
 
-function displayClinic(value: unknown): string {
+function displayClinic(value: unknown, clinicKey: string): string {
+  if (clinicKey === "mansoor-private") return "MANSOOR CLINIC";
   const raw = String(value || "Clinic");
   return raw.includes("::") ? raw.split("::").slice(1).join("::") : raw;
+}
+
+function formatAppointmentDate(value: unknown): string {
+  const raw = String(value || "").trim();
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw);
+  return match ? `${match[3]}-${match[2]}-${match[1]}` : (raw || "To be confirmed");
 }
 
 function keyFromCollection(name: string): string {
@@ -118,7 +125,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const recipient = normalizePhone(appointment.phone || "");
-    const clinicName = displayClinic(appointment.clinic).slice(0, 120);
+    const clinicName = displayClinic(appointment.clinic, String(appointment.clinic_key || "")).slice(0, 120);
     const { data: existing, error: existingError } = await admin
       .from("clinic_whatsapp_rejection_log")
       .select("id,status,provider_message_id")
@@ -142,7 +149,7 @@ Deno.serve(async (req: Request) => {
     const values = [
       String(appointment.patient_name || "Patient").slice(0, 100),
       clinicName,
-      String(appointment.appointment_date || "To be confirmed"),
+      formatAppointmentDate(appointment.appointment_date),
       String(appointment.slot || "Time to be confirmed"),
     ];
 
