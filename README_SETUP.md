@@ -110,7 +110,7 @@ The daily report and payment/remittance ledger are operational records; they are
 When an admin clicks **Reject with reason**, the dashboard saves the reason and records the rejection first. If the existing `appointment-decision` notification response does not report a WhatsApp send as successful, the dashboard invokes `clinic-patient-whatsapp-rejection`. The rejection function checks that the appointment is rejected, a reason is saved, the patient has `communication_consent = true`, and the admin is assigned to the clinic.
 
 1. Run `supabase/clinic-whatsapp-rejection.sql` in Supabase SQL Editor once.
-2. In Meta WhatsApp Manager, create and obtain approval for a **Utility** template named `appointment_rejection_with_reason`, language `English (en)`, with this exact body and five variables:
+2. In Meta WhatsApp Manager, use the approved **Utility** template named `appointment_request_update`, language `English (en)`, with four BODY variables in this order:
 
 ```text
 Hello *{{1}}*,
@@ -119,14 +119,12 @@ We are sorry, but your appointment request at *{{2}}* for *{{3}}* could not be a
 
 Reason: *{{4}}*
 
-For assistance or to request another appointment, please contact the clinic desk at *{{5}}*.
-
 Thank you.
 ```
 
-Variables: `{{1}}` patient name; `{{2}}` clinic name; `{{3}}` appointment date; `{{4}}` saved rejection reason; `{{5}}` clinic desk phone.
+Variables: `{{1}}` patient name; `{{2}}` clinic name; `{{3}}` appointment date; `{{4}}` saved rejection reason. The rejection function sends exactly four BODY parameters and does not require a clinic desk phone placeholder.
 
-3. Set the Supabase Edge Function secret `WHATSAPP_TEMPLATE_REJECTED=appointment_rejection_with_reason`. The existing Meta access token, phone number ID, language, API version and clinic desk phone secrets are reused.
+3. Set the Supabase Edge Function secret `WHATSAPP_TEMPLATE_REJECTED=appointment_request_update`. The existing Meta access token, phone number ID, language and API version are reused.
 4. Deploy both functions:
 
 ```bash
