@@ -107,22 +107,22 @@ The daily report and payment/remittance ledger are operational records; they are
 
 ### Patient WhatsApp message when an appointment is rejected
 
-When an admin clicks **Reject with reason**, the dashboard saves the reason and records the rejection first. If the existing `appointment-decision` notification response does not report a WhatsApp send as successful, the dashboard invokes `clinic-patient-whatsapp-rejection`. The rejection function checks that the appointment is rejected, a reason is saved, the patient has `communication_consent = true`, and the admin is assigned to the clinic.
+When an admin rejects an appointment, the dashboard may save the rejection reason for the clinic's internal record. If the existing `appointment-decision` notification response does not report a WhatsApp send as successful, the dashboard invokes `clinic-patient-whatsapp-rejection`. The rejection function checks that the appointment is rejected, the patient has `communication_consent = true`, and the admin is assigned to the clinic. The WhatsApp template does not include the rejection reason; sending it does not depend on a saved reason.
 
 1. Run `supabase/clinic-whatsapp-rejection.sql` in Supabase SQL Editor once.
-2. In Meta WhatsApp Manager, use the approved **Utility** template named `appointment_request_update`, language `English (en)`, with four BODY variables in this order:
+2. In Meta WhatsApp Manager, use the approved **Utility** template named `appointment_request_update`, language `English (en)`, with four BODY variables matching the approved template shown in WhatsApp Manager:
 
 ```text
 Hello *{{1}}*,
 
-We are sorry, but your appointment request at *{{2}}* for *{{3}}* could not be accepted.
+Your appointment request at *{{2}}* on *{{3}}* during *{{4}}* could not be approved.
 
-Reason: *{{4}}*
+We regret the inconvenience. Please contact the clinic desk to discuss another available date or time.
 
 Thank you.
 ```
 
-Variables: `{{1}}` patient name; `{{2}}` clinic name; `{{3}}` appointment date; `{{4}}` saved rejection reason. The rejection function sends exactly four BODY parameters and does not require a clinic desk phone placeholder.
+Variables: `{{1}}` patient name; `{{2}}` clinic name; `{{3}}` appointment date; `{{4}}` appointment time slot. The rejection reason is not inserted into this template and is not required for the WhatsApp send.
 
 3. Set the Supabase Edge Function secret `WHATSAPP_TEMPLATE_REJECTED=appointment_request_update`. The existing Meta access token, phone number ID, language and API version are reused.
 4. Deploy both functions:
