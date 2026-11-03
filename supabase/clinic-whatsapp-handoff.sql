@@ -26,7 +26,7 @@ revoke all on public.clinic_whatsapp_handoff_log from public, anon, authenticate
 grant all on public.clinic_whatsapp_handoff_log to service_role;
 
 -- In Meta WhatsApp Manager, create and get APPROVED Utility template:
--- Name: appointment_forwarded_to_doctor
+-- Name: appointment_confirmation
 -- Language: English (en)
 -- Body (5 positional variables):
 -- Hello {{1}},
