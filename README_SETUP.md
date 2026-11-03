@@ -32,14 +32,11 @@ Install the Supabase CLI and log in, then from this package directory:
 ```bash
 supabase login
 supabase link --project-ref YOUR_PROJECT_REF
-supabase secrets set SUPABASE_URL=https://YOUR_PROJECT_ID.supabase.co
-supabase secrets set SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
-supabase secrets set SUPABASE_SERVICE_ROLE_KEY=YOUR_SERVICE_ROLE_KEY
 supabase secrets set ALLOWED_ORIGIN=https://YOUR_PUBLIC_SITE_DOMAIN
 supabase functions deploy appointment-decision
 ```
 
-Set secrets through the CLI or Supabase dashboard only. **Never put the service-role key or messaging provider tokens in `config.js`, HTML, Git, or any public folder.** Keep the Edge Function JWT verification enabled; it additionally checks the signed user's server-managed app metadata role.
+Supabase injects its project URL and default API keys into Edge Functions. Set only your application/provider secrets through the CLI or Supabase Dashboard. **Never put the service-role/secret key or messaging provider tokens in `config.js`, HTML, Git, or any public folder.** Keep the Edge Function JWT verification enabled; it additionally checks the signed user's server-managed app metadata role.
 
 ## 3) SMS setup (MSG91)
 1. Configure MSG91 account, sender/route, and DLT registration/templates as required for Indian messaging.
@@ -113,7 +110,7 @@ The daily report and payment/remittance ledger are operational records; they are
 After the clinic submits `Collect Fee & Send to Doctor`, the handoff form has a separate checkbox to confirm the patient's appointment-related WhatsApp consent. Tick it only after confirming the patient agreed to these updates. The appointment is still sent to Doctor if the box is left unticked; no WhatsApp message is sent in that case.
 
 1. Run `supabase/clinic-whatsapp-handoff.sql` in Supabase SQL Editor after `clinic-handoff-day-end.sql`.
-2. In Meta WhatsApp Manager, create and obtain approval for a **Utility** template named `appointment_forwarded_to_doctor`, language `English (en)`, with this exact body and five positional variables:
+2. In Meta WhatsApp Manager, create and obtain approval for a **Utility** template named `appointment_confirmation`, language `English (en)`, with this exact body and five positional variables:
 
 ```text
 Hello {{1}},
@@ -133,7 +130,7 @@ Variables: `{{1}}` patient name; `{{2}}` clinic name; `{{3}}` appointment date; 
 supabase secrets set --project-ref zzxehneqvnmprlwcohkv \
   WHATSAPP_ACCESS_TOKEN=YOUR_LONG_LIVED_META_TOKEN \
   WHATSAPP_PHONE_NUMBER_ID=YOUR_META_PHONE_NUMBER_ID \
-  WHATSAPP_TEMPLATE_HANDOFF=appointment_forwarded_to_doctor \
+  WHATSAPP_TEMPLATE_HANDOFF=appointment_confirmation \
   WHATSAPP_TEMPLATE_LANGUAGE=en \
   WHATSAPP_API_VERSION=v26.0 \
   CLINIC_PHONE_MANSOOR_PRIVATE="+91 9906927006" \
@@ -142,7 +139,7 @@ supabase secrets set --project-ref zzxehneqvnmprlwcohkv \
 
 For GMC Anantnag and South Kashmir, also configure `CLINIC_PHONE_GMC_ANANTNAG` and `CLINIC_PHONE_SOUTH_KASHMIR` with their verified clinic desk numbers. Those contact numbers are not currently configured, so the Edge Function will stop before sending for those clinics until their real numbers are supplied.
 
-Make sure the project has `SUPABASE_URL`, `SUPABASE_ANON_KEY` (or `SUPABASE_PUBLISHABLE_KEY`), and `SUPABASE_SERVICE_ROLE_KEY` (or `SUPABASE_SECRET_KEY`) available as Edge Function secrets. The service-role/secret key must remain server-side.
+Supabase injects `SUPABASE_URL` and its default API keys into Edge Functions automatically. The WhatsApp function supports both the legacy `SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY` variables and the newer `SUPABASE_PUBLISHABLE_KEYS` / `SUPABASE_SECRET_KEYS` JSON collections. Do not try to add custom secrets whose names start with `SUPABASE_`; keep all secret/service keys server-side.
 
 4. Deploy the Edge Function from the repository root:
 
