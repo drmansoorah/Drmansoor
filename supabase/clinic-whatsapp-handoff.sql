@@ -28,18 +28,18 @@ grant all on public.clinic_whatsapp_handoff_log to service_role;
 -- In Meta WhatsApp Manager, create and get APPROVED Utility template:
 -- Name: appointment_confirmation
 -- Language: English (en)
--- Body (5 positional variables):
--- Hello {{1}},
+-- Body (4 positional variables):
+-- Hello *{{1}}*,
 --
--- Your appointment at {{2}} on {{3}} during {{4}} has been approved by Prof. (Dr.) Mansoor Ahmad.
+-- Your appointment at *{{2}}* on (*{{3}}*) has been approved by *Prof. (Dr.) Mansoor Ahmad*.
 --
 -- *Please note:* This appointment is subject to payment of the applicable doctor's consultation fee.
--- Kindly contact the clinic desk ({{5}}) for fee details before your visit.
+-- Kindly contact the clinic desk (*{{4}}*) for fee details before your visit.
 --
 -- Thank you.
 --
 -- Variables: {{1}} patient name; {{2}} clinic name; {{3}} date;
--- {{4}} timing/slot; {{5}} clinic desk phone number.
+-- {{4}} clinic desk phone number. Appointment timing is intentionally omitted.
 --
 -- Clinic phone secrets:
 -- CLINIC_PHONE_MANSOOR_PRIVATE defaults to the published +91 9906927006,

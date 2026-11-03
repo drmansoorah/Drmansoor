@@ -157,13 +157,13 @@ Deno.serve(async (req: Request) => {
       return respond(409, { error: "A WhatsApp send is already in progress for this appointment. Check the log before retrying." });
     }
 
-    // Approved Utility template body variables:
-    // 1 patient name, 2 clinic name, 3 appointment date, 4 timing, 5 clinic desk phone.
+    // Approved Utility template body variables (4 total):
+    // 1 patient name, 2 clinic name, 3 appointment date, 4 clinic desk phone.
+    // The current Meta template intentionally does not include appointment timing.
     const values = [
       String(appointment.patient_name || "Patient").slice(0, 100),
       clinicName,
       String(appointment.appointment_date || "To be confirmed"),
-      String(appointment.slot || "To be confirmed"),
       deskPhone,
     ];
 

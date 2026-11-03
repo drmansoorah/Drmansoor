@@ -110,19 +110,19 @@ The daily report and payment/remittance ledger are operational records; they are
 After the clinic submits `Collect Fee & Send to Doctor`, the handoff form has a separate checkbox to confirm the patient's appointment-related WhatsApp consent. Tick it only after confirming the patient agreed to these updates. The appointment is still sent to Doctor if the box is left unticked; no WhatsApp message is sent in that case.
 
 1. Run `supabase/clinic-whatsapp-handoff.sql` in Supabase SQL Editor after `clinic-handoff-day-end.sql`.
-2. In Meta WhatsApp Manager, create and obtain approval for a **Utility** template named `appointment_confirmation`, language `English (en)`, with this exact body and five positional variables:
+2. In Meta WhatsApp Manager, create and obtain approval for a **Utility** template named `appointment_confirmation`, language `English (en)`, with this exact body and four positional variables:
 
 ```text
-Hello {{1}},
+Hello *{{1}}*,
 
-Your appointment at {{2}} on {{3}} during {{4}} has been approved by Prof. (Dr.) Mansoor Ahmad.
+Your appointment at *{{2}}* on (*{{3}}*) has been approved by *Prof. (Dr.) Mansoor Ahmad*.
 
-*Please note:* This appointment is subject to payment of the applicable doctor's consultation fee. Kindly contact the clinic desk ({{5}}) for fee details before your visit.
+*Please note:* This appointment is subject to payment of the applicable doctor's consultation fee. Kindly contact the clinic desk (*{{4}}*) for fee details before your visit.
 
 Thank you.
 ```
 
-Variables: `{{1}}` patient name; `{{2}}` clinic name; `{{3}}` appointment date; `{{4}}` selected timing/slot; `{{5}}` clinic desk phone.
+Variables: `{{1}}` patient name; `{{2}}` clinic name; `{{3}}` appointment date; `{{4}}` clinic desk phone. Appointment timing is intentionally not included in this version of the template.
 
 3. Add server-side Supabase Edge Function secrets (never put the Meta token in `config.js`, HTML, or Git):
 
@@ -147,6 +147,6 @@ Supabase injects `SUPABASE_URL` and its default API keys into Edge Functions aut
 supabase functions deploy clinic-patient-whatsapp --project-ref zzxehneqvnmprlwcohkv
 ```
 
-The function verifies the signed-in clinic-admin JWT and clinic scope, reads only the patient's name, clinic, appointment date/timing and clinic desk phone, and sends the approved Meta template to the patient's WhatsApp number. It does not send concern, diagnosis, medicines, fee amounts, or prescription details. A unique per-appointment send log prevents duplicate successful messages. Failed sends can be retried after correcting the Meta configuration.
+The function verifies the signed-in clinic-admin JWT and clinic scope, reads only the patient's name, clinic, appointment date and clinic desk phone, and sends the approved Meta template to the patient's WhatsApp number. It does not send concern, diagnosis, medicines, fee amounts, or prescription details. A unique per-appointment send log prevents duplicate successful messages. Failed sends can be retried after correcting the Meta configuration.
 
 The dashboard reports whether Meta accepted the template request. Provider acceptance is **not** proof of handset delivery; check WhatsApp Manager/webhook delivery status for final delivery. Template approval, valid patient opt-in, Meta business verification and messaging limits remain provider-side requirements.
