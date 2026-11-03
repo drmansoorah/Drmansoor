@@ -31,6 +31,15 @@ function displayClinic(value: unknown): string {
   return raw.includes("::") ? raw.split("::").slice(1).join("::") : raw;
 }
 
+function clinicDeskPhone(clinicKey: string): string {
+  const configured: Record<string, string> = {
+    "mansoor-private": Deno.env.get("CLINIC_PHONE_MANSOOR_PRIVATE") || "+91 9906927006",
+    "gmc-anantnag": Deno.env.get("CLINIC_PHONE_GMC_ANANTNAG") || "",
+    "south-kashmir": Deno.env.get("CLINIC_PHONE_SOUTH_KASHMIR") || "",
+  };
+  return String(configured[clinicKey] || "").trim();
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -107,6 +116,19 @@ Deno.serve(async (req: Request) => {
     }
 
     const recipient = normalizePhone(appointment.phone || "");
+    const clinicName = displayClinic(appointment.clinic).slice(0, 120);
+    const deskPhone = clinicDeskPhone(String(appointment.clinic_key || ""));
+    if (!deskPhone) {
+      const secretName = appointment.clinic_key === "gmc-anantnag"
+        ? "CLINIC_PHONE_GMC_ANANTNAG"
+        : appointment.clinic_key === "south-kashmir"
+          ? "CLINIC_PHONE_SOUTH_KASHMIR"
+          : "CLINIC_PHONE_MANSOOR_PRIVATE";
+      return respond(503, {
+        error: `WhatsApp is not sent: clinic desk phone is not configured. Add the Supabase secret ${secretName} for this clinic.`,
+      });
+    }
+
     const { data: existing, error: existingError } = await admin
       .from("clinic_whatsapp_handoff_log")
       .select("id,status,provider_message_id")
@@ -121,38 +143,14 @@ Deno.serve(async (req: Request) => {
       return respond(409, { error: "A WhatsApp send is already in progress for this appointment. Check the log before retrying." });
     }
 
-    const { data: latestPayment, error: paymentError } = await admin
-      .from("clinic_appointment_payments")
-      .select("payment_method")
-      .eq("appointment_id", appointment.id)
-      .order("collected_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (paymentError) throw new Error("Could not read the payment method: " + paymentError.message);
-
-    const fee = Number(appointment.consultation_fee || 0);
-    const paid = Number(appointment.amount_paid || 0);
-    const skipped = !!appointment.payment_skipped;
-    const method = latestPayment?.payment_method
-      ? String(latestPayment.payment_method).replace(/_/g, " ")
-      : (paid > 0 ? "Recorded earlier" : "Not collected");
-    const paymentStatus = skipped
-      ? "Payment waived / exempted"
-      : paid >= fee && fee > 0
-        ? "Paid in full"
-        : paid > 0
-          ? "Part payment received"
-          : "Payment pending";
-
+    // Approved Utility template body variables:
+    // 1 patient name, 2 clinic name, 3 appointment date, 4 timing, 5 clinic desk phone.
     const values = [
       String(appointment.patient_name || "Patient").slice(0, 100),
-      displayClinic(appointment.clinic).slice(0, 120),
+      clinicName,
       String(appointment.appointment_date || "To be confirmed"),
       String(appointment.slot || "To be confirmed"),
-      money(fee),
-      money(paid),
-      method,
-      paymentStatus,
+      deskPhone,
     ];
 
     let logId: string;
