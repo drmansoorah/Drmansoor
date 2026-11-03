@@ -25,19 +25,17 @@ revoke all on public.clinic_whatsapp_rejection_log from public, anon, authentica
 grant all on public.clinic_whatsapp_rejection_log to service_role;
 
 -- In Meta WhatsApp Manager, create and get APPROVED Utility template:
--- Name: appointment_rejection_with_reason
+-- Name: appointment_request_update
 -- Language: English (en)
--- Body:
+-- Body should use exactly four BODY placeholders:
 -- Hello *{{1}}*,
 --
 -- We are sorry, but your appointment request at *{{2}}* for *{{3}}* could not be accepted.
 --
 -- Reason: *{{4}}*
 --
--- For assistance or to request another appointment, please contact the clinic desk at *{{5}}*.
---
 -- Thank you.
 --
 -- Variables: {{1}} patient name; {{2}} clinic name; {{3}} appointment date;
--- {{4}} rejection reason; {{5}} clinic desk phone number.
+-- {{4}} saved rejection reason.
 -- The patient booking form requires appointment-related communication consent.
