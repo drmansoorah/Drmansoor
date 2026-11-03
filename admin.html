@@ -339,6 +339,15 @@
     if(amount<=0||!narration){$('remittanceMessage').textContent='Enter a valid amount and narration.';return}
     const btn=$('transferDoctorBtn');btn.disabled=true;btn.textContent='Recording…';
     try{
+      // Refresh the JWT before a privileged finance RPC. This avoids stale role claims
+      // when clinic-admin permissions were updated after the browser session began.
+      const {data:refreshData,error:refreshError}=await client.auth.refreshSession();
+      if(refreshError)throw new Error('Login session refresh failed. Sign out and sign in again. '+refreshError.message);
+      const session=refreshData&&refreshData.session;
+      const meta=session&&session.user?session.user.app_metadata||{}:{};
+      if(!session||meta.role!=='admin')throw new Error('This login is not marked role=admin in Supabase Auth app_metadata. Sign out and sign in again, or ask the project owner to verify the clinic-admin role.');
+      const sessionClinic=meta.clinic_key||'*';
+      if(sessionClinic!==currentClinicKey)throw new Error('Your clinic login scope changed. Sign out and sign in again before recording a transfer.');
       const {data,error}=await client.rpc('clinic_record_doctor_remittance',{p_date:$('dailyDate').value,p_amount:amount,p_method:$('remittanceMethod').value,p_narration:narration});
       if(error)throw error;
       $('remittanceNarration').value='';$('remittanceAmount').value='';
