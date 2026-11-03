@@ -277,9 +277,9 @@
     catch(e){showError('Could not mark arrival: '+e.message);button.disabled=false;button.textContent='Mark arrived'}
   }
   function indiaDayRange(dateValue){
-    const match=String(dateValue||'').match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);
-    if(!match)return null;
-    const year=Number(match[1]),month=Number(match[2]),day=Number(match[3]);
+    const parts=String(dateValue||'').split('-');
+    if(parts.length!==3||parts.some(part=>!/^\\d+$/.test(part)))return null;
+    const year=Number(parts[0]),month=Number(parts[1]),day=Number(parts[2]);
     const start=new Date(Date.UTC(year,month-1,day)-330*60*1000);
     const end=new Date(Date.UTC(year,month-1,day+1)-330*60*1000);
     return {start:start.toISOString(),end:end.toISOString()};
