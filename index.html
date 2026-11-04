@@ -481,15 +481,20 @@
                 </select>
               </div>
 
-              <!-- STEP 2: PATIENT NAME & PHONE -->
+              <!-- STEP 2: PATIENT CONTACT DETAILS -->
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label class="block text-xs font-bold text-slate-700 mb-1">Patient Full Name *</label>
-                  <input type="text" id="patientFullName" required placeholder="e.g., Suhail Ahmad" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-600 text-sm">
+                  <input type="text" id="patientFullName" required maxlength="100" placeholder="e.g., Suhail Ahmad" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-600 text-sm">
                 </div>
                 <div>
                   <label class="block text-xs font-bold text-slate-700 mb-1">WhatsApp / Contact Number *</label>
-                  <input type="tel" id="patientContact" required placeholder="+91 XXXXX XXXXX" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-600 text-sm">
+                  <input type="tel" id="patientContact" required maxlength="25" placeholder="+91 XXXXX XXXXX" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-600 text-sm">
+                </div>
+                <div class="sm:col-span-2">
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Email Address *</label>
+                  <input type="email" id="patientEmail" required maxlength="254" autocomplete="email" placeholder="name@example.com" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-600 text-sm">
+                  <p class="text-[11px] text-slate-500 mt-1">PayU requires an email address for secure hosted checkout.</p>
                 </div>
               </div>
 
@@ -523,13 +528,6 @@
               </div>
 
             </form>
-
-            <div id="paymentRetryPanel" class="hidden mt-6 rounded-2xl border border-amber-300 bg-amber-50 p-5 text-left">
-              <p class="font-bold text-amber-900">Payment verification is still pending</p>
-              <p id="paymentRetryText" class="text-xs text-amber-900 mt-2"></p>
-              <p id="paymentRetryError" class="text-xs text-rose-700 mt-2"></p>
-              <button id="retryPaymentVerificationBtn" type="button" onclick="retryPaymentVerification()" class="mt-3 rounded-xl bg-amber-700 px-4 py-2 text-sm font-bold text-white">Retry verification</button>
-            </div>
 
             <!-- SUCCESS CONFIRMATION CARD (AFTER VERIFIED PAYMENT) -->
             <div id="bookingResultCard" class="hidden mt-6 p-6 rounded-2xl bg-teal-50 border border-teal-200 text-slate-800 text-center animate-fade-in space-y-3">
@@ -713,9 +711,7 @@
   </div>
   <button type="button" onclick="toggleClinicWhatsappWidget()" class="fixed bottom-6 right-6 z-50 bg-emerald-600 hover:bg-emerald-700 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 transition-all" aria-label="Choose clinic WhatsApp"><i class="ph-bold ph-whatsapp-logo text-3xl"></i></button>
 
-  <!-- Secure Razorpay Checkout; the secret key stays inside Supabase Edge Functions. -->
-  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-  <!-- Supabase client + public configuration (never put service-role keys in the browser) -->
+<!-- Supabase client + public configuration (never put service-role keys in the browser) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./config.js"></script>
   <script src="./clinics.js"></script>
@@ -825,122 +821,12 @@
       }[ch]));
     }
 
-    // Create a server-side Razorpay order first. The appointment row is created
-    // only by the payment-finalization Edge Function after Razorpay verifies capture.
-    let pendingPaymentResponse = null;
-    let paymentVerificationBusy = false;
-
-    async function invokePaymentFunction(name, body) {
-      const { data, error } = await supabaseClient.functions.invoke(name, { body });
-      if (error) {
-        let detail = error.message || 'Payment service request failed.';
-        try {
-          if (error.context && typeof error.context.json === 'function') {
-            const payload = await error.context.json();
-            detail = payload.error || payload.message || detail;
-          }
-        } catch (_) {}
-        throw new Error(detail);
-      }
-      if (!data) throw new Error('Payment service returned an empty response.');
-      if (data.error) throw new Error(data.error);
-      return data;
-    }
-
-    function setBookingButtonBusy(isBusy, label) {
-      const button = document.getElementById('submitBookingBtn');
-      button.disabled = isBusy;
-      button.classList.toggle('opacity-60', isBusy);
-      button.classList.toggle('cursor-not-allowed', isBusy);
-      button.querySelector('span').textContent = label || (isBusy ? 'Please wait…' : 'Continue to Secure Payment');
-    }
-
-    async function ensureRazorpayLoaded() {
-      if (window.Razorpay) return;
-      throw new Error('Secure payment checkout could not be loaded. Please refresh the page and try again.');
-    }
-
-    async function finishPaidBooking(paymentResponse) {
-      if (!paymentResponse || paymentVerificationBusy) return;
-      paymentVerificationBusy = true;
-      pendingPaymentResponse = paymentResponse;
-      setBookingButtonBusy(true, 'Verifying payment…');
-      const retryPanel = document.getElementById('paymentRetryPanel');
-      retryPanel.classList.add('hidden');
-      try {
-        const result = await invokePaymentFunction('verify-appointment-payment', {
-          razorpay_order_id: paymentResponse.razorpay_order_id,
-          razorpay_payment_id: paymentResponse.razorpay_payment_id,
-          razorpay_signature: paymentResponse.razorpay_signature
-        });
-        if (result.ok !== true || !result.appointment_id || !result.patient_code) {
-          throw new Error(result.message || 'Payment was verified, but the appointment record is not yet confirmed.');
-        }
-
-        const credentialDetails = result.portal_access_code
-          ? `<p><strong>MindCare Access Code (7 characters):</strong> <span class="font-mono font-bold">${escapeHtml(result.portal_access_code)}</span></p>
-             <p class="text-xs text-slate-600">Save this code securely. It will remain the same for this patient profile.</p>`
-          : `<p class="text-xs text-slate-700">Use the previously issued MindCare Access Code for this patient profile.</p>`;
-
-        const clinicName = result.clinic_name || 'Selected clinic';
-        const requestedDate = result.appointment_date || '';
-        document.getElementById('receiptSummaryText').innerHTML = `
-          <strong>Payment status:</strong> Successfully paid<br>
-          <strong>Appointment request:</strong> Sent to clinic for review<br>
-          <strong>Clinic:</strong> ${escapeHtml(clinicName)}<br>
-          <strong>Preferred date:</strong> ${escapeHtml(requestedDate)}<br>
-          <strong>Amount paid:</strong> ₹${Number(result.consultation_fee || result.amount_paid || 0).toLocaleString('en-IN')}<br>
-          <strong>Payment reference:</strong> ${escapeHtml(paymentResponse.razorpay_payment_id)}<br><br>
-          <div class="rounded-xl border border-teal-200 bg-white p-4 text-left space-y-2">
-            <p class="font-extrabold text-teal-900">Your Patient Portal credentials</p>
-            <p><strong>Patient ID:</strong> <span class="font-mono font-bold">${escapeHtml(result.patient_code)}</span></p>
-            ${credentialDetails}
-            <p class="text-xs text-slate-600">Your Patient Portal remains locked until the clinician approves your appointment.</p>
-          </div>
-          <br><strong>Status: Pending clinic approval.</strong> Payment does not mean the appointment is approved.
-        `;
-
-        const selectedClinic = clinicByKey(result.clinic_key || '');
-        const whatsappBtn = document.getElementById('whatsappConfirmBtn');
-        const waMsg = encodeURIComponent('Assalam o Alaikum, I have paid online and submitted an appointment request. Please let me know when it has been reviewed.');
-        if (selectedClinic && selectedClinic.whatsapp) {
-          whatsappBtn.href = 'https://wa.me/' + selectedClinic.whatsapp + '?text=' + waMsg;
-          whatsappBtn.classList.remove('opacity-50','pointer-events-none');
-          whatsappBtn.textContent = 'Contact ' + selectedClinic.shortName + ' on WhatsApp';
-        } else {
-          whatsappBtn.href = '#';
-          whatsappBtn.classList.add('opacity-50','pointer-events-none');
-          whatsappBtn.textContent = 'Clinic WhatsApp contact not configured';
-        }
-        pendingPaymentResponse = null;
-        retryPanel.classList.add('hidden');
-        document.getElementById('bookingResultCard').classList.remove('hidden');
-        document.getElementById('bookingResultCard').scrollIntoView({ behavior: 'smooth' });
-        document.getElementById('clinicBookingForm').reset();
-      } catch (err) {
-        document.getElementById('paymentRetryText').textContent =
-          'Payment may already be captured, but the appointment is not yet confirmed in the admin queue. Do not pay again. Select Retry verification below.';
-        retryPanel.classList.remove('hidden');
-        document.getElementById('paymentRetryError').textContent = err.message || 'Verification could not be completed.';
-        retryPanel.scrollIntoView({ behavior: 'smooth' });
-      } finally {
-        paymentVerificationBusy = false;
-        setBookingButtonBusy(!!pendingPaymentResponse, pendingPaymentResponse ? 'Payment verification pending' : 'Continue to Secure Payment');
-      }
-    }
-
-    async function retryPaymentVerification() {
-      if (pendingPaymentResponse) await finishPaidBooking(pendingPaymentResponse);
-    }
-
+    // PayU Hosted Checkout: the server returns signed form fields and the
+    // appointment is created only by the PayU callback after a captured payment.
     async function processBooking(event) {
       event.preventDefault();
       if (!supabaseClient) {
         alert('Online booking is not configured. Please contact the selected clinic desk.');
-        return;
-      }
-      if (pendingPaymentResponse) {
-        alert('A payment verification is still pending. Please use the Retry verification button; do not create another payment.');
         return;
       }
 
@@ -950,6 +836,7 @@
 
       const name = document.getElementById('patientFullName').value.trim();
       const phone = document.getElementById('patientContact').value.trim();
+      const email = document.getElementById('patientEmail').value.trim();
       const date = document.getElementById('bookingDate').value;
       const consent = document.getElementById('notificationConsent').checked;
 
@@ -961,8 +848,12 @@
         alert('Please enter a valid name (2–100 characters).');
         return;
       }
-      if (phone.replace(/\D/g, '').length < 10 || phone.length > 25) {
+      if (phone.replace(/\\D/g, '').length < 10 || phone.length > 25) {
         alert('Please enter a valid contact number.');
+        return;
+      }
+      if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) || email.length > 254) {
+        alert('Please enter a valid email address for PayU checkout.');
         return;
       }
       if (!date || date < new Date().toLocaleDateString('en-CA')) {
@@ -970,63 +861,62 @@
         return;
       }
 
-      setBookingButtonBusy(true, 'Creating secure payment…');
-      document.getElementById('bookingResultCard').classList.add('hidden');
-      document.getElementById('paymentRetryPanel').classList.add('hidden');
+      const submitBtn = document.getElementById('submitBookingBtn');
+      submitBtn.disabled = true;
+      submitBtn.classList.add('opacity-60', 'cursor-not-allowed');
+      submitBtn.querySelector('span').textContent = 'Preparing PayU secure checkout…';
       try {
-        await ensureRazorpayLoaded();
-        const order = await invokePaymentFunction('create-appointment-payment', {
-          patient_name: name,
-          phone,
-          clinic_key: selectedClinic.key,
-          appointment_date: date,
-          communication_consent: true
-        });
-        if (!order.order_id || !order.key_id || !Number(order.amount)) {
-          throw new Error('Payment order was not created. Please contact the clinic desk.');
-        }
-
-        const amountInRupees = (Number(order.amount) / 100).toLocaleString('en-IN', { maximumFractionDigits: 2 });
-        const checkout = new window.Razorpay({
-          key: order.key_id,
-          amount: Number(order.amount),
-          currency: order.currency || 'INR',
-          name: 'Mansoor Psychiatry & MindCare Clinic',
-          description: 'Appointment fee — ' + selectedClinic.name,
-          order_id: order.order_id,
-          prefill: { name, contact: phone },
-          notes: { clinic: selectedClinic.name, appointment_date: date },
-          theme: { color: '#0f766e' },
-          modal: {
-            ondismiss: function () {
-              if (!pendingPaymentResponse) setBookingButtonBusy(false);
-            }
-          },
-          handler: function (response) {
-            finishPaidBooking(response);
+        const { data, error } = await supabaseClient.functions.invoke('create-payu-appointment-payment', {
+          body: {
+            patient_name: name,
+            phone,
+            email,
+            clinic_key: selectedClinic.key,
+            appointment_date: date,
+            communication_consent: true
           }
         });
-        checkout.on('payment.failed', function (response) {
-          const reason = response && response.error && (response.error.description || response.error.reason);
-          alert('Payment was not completed. No appointment request was sent to the clinic.' + (reason ? '\\n' + reason : ''));
-          setBookingButtonBusy(false);
+        if (error) {
+          let detail = error.message || 'PayU payment service could not be started.';
+          try {
+            if (error.context && typeof error.context.json === 'function') {
+              const payload = await error.context.json();
+              detail = payload.error || payload.message || detail;
+            }
+          } catch (_) {}
+          throw new Error(detail);
+        }
+        if (!data || data.error) throw new Error((data && data.error) || 'PayU payment service returned an invalid response.');
+        if (!data.gateway_url || !data.fields || !data.fields.txnid || !data.fields.hash) {
+          throw new Error('PayU did not return a valid secure payment form.');
+        }
+
+        const payuForm = document.createElement('form');
+        payuForm.method = 'POST';
+        payuForm.action = data.gateway_url;
+        payuForm.acceptCharset = 'UTF-8';
+        payuForm.style.display = 'none';
+        Object.entries(data.fields).forEach(([name, value]) => {
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = name;
+          input.value = String(value ?? '');
+          payuForm.appendChild(input);
         });
-        setBookingButtonBusy(true, 'Waiting for payment…');
-        checkout.open();
+        document.body.appendChild(payuForm);
+        submitBtn.querySelector('span').textContent = 'Redirecting to PayU…';
+        payuForm.submit();
       } catch (err) {
-        alert(err.message || 'Could not start online payment. Please try again.');
-        setBookingButtonBusy(false);
+        alert(err.message || 'Could not start PayU payment. Please try again.');
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+        submitBtn.querySelector('span').textContent = 'Continue to Secure Payment';
       }
     }
 
     function resetBookingForm() {
-      if (pendingPaymentResponse) {
-        alert('Please finish payment verification before starting a new booking.');
-        return;
-      }
       document.getElementById('clinicBookingForm').reset();
       document.getElementById('bookingResultCard').classList.add('hidden');
-      document.getElementById('paymentRetryPanel').classList.add('hidden');
     }
   </script>
 </body>
