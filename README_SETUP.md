@@ -116,7 +116,7 @@ Use a supported Graph API version for your Meta app. WhatsApp business-initiated
 Upload `index.html`, `config.js`, and `admin.html` together to a static host (Netlify, Vercel, etc.). The admin URL will be `https://YOUR_DOMAIN/admin.html`. Keep all files in the same site root so the relative `config.js` path works. HTTPS is required for production.
 
 ## How it behaves
-- The public browser cannot create appointment rows. A pending appointment is created only after Razorpay reports a captured payment and the server verifies its signature, order, amount and currency. Failed or cancelled payments create no admin request.
+- The public browser cannot create appointment rows. A pending appointment is created only after PayU's signed response and Verify Payment API confirm the exact transaction as captured. Failed, cancelled or unverified payments create no admin request.
 - Patients cannot read existing records. Admin reads are protected by RLS and the `app_metadata.role = admin` claim.
 - The admin decision Edge Function verifies the signed-in user and admin role on the server. It changes the status once, then attempts SMS and WhatsApp messages.
 - If a provider is unconfigured or fails, the appointment status still changes but the dashboard shows notification status so staff can follow up manually.
