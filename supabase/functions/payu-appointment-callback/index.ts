@@ -206,7 +206,7 @@ Deno.serve(async (req: Request) => {
     const verifiedAmount = Number(verified.amt ?? verified.transaction_amount ?? verified.amount);
     const verifiedPayuId = String(verified.mihpayid || verified.mihpayupid || payuPaymentId);
     if (verifiedStatus !== "success" ||
-        (verifiedUnmapped && verifiedUnmapped !== "captured") ||
+        verifiedUnmapped !== "captured" ||
         Math.round(verifiedAmount * 100) !== Number(order.amount_paise) ||
         !verifiedPayuId ||
         (payuPaymentId && verifiedPayuId !== payuPaymentId)) {
