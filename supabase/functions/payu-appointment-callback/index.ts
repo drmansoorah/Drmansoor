@@ -159,6 +159,8 @@ Deno.serve(async (req: Request) => {
 
     if (Math.round(Number(amount) * 100) !== Number(order.amount_paise) ||
         String(order.email).toLowerCase() !== email.toLowerCase() ||
+        String(order.patient_name) !== firstname ||
+        productinfo !== "Clinic Appointment" ||
         udf1 !== order.clinic_key ||
         udf2 !== String(order.appointment_date)) {
       if (source === "webhook") return Response.json({ error: "PayU response details do not match the saved booking." }, { status: 409 });
