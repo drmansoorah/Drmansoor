@@ -1,3 +1,5 @@
+import { createClient } from "npm:@supabase/supabase-js@2";
+
 const allowedOrigin = Deno.env.get("ALLOWED_ORIGIN") || "";
 const corsHeaders = {
   "Access-Control-Allow-Origin": allowedOrigin || "https://drmansoor.vercel.app",
@@ -98,7 +100,7 @@ Deno.serve(async (req: Request) => {
       return respond(400, { error: "Appointment communication consent is required before payment." });
     }
 
-    const admin = (await import("npm:@supabase/supabase-js@2")).createClient(supabaseUrl, serviceRoleKey, {
+    const admin = createClient(supabaseUrl, serviceRoleKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
     const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
