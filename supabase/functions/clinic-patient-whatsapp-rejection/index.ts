@@ -150,7 +150,7 @@ Deno.serve(async (req: Request) => {
       String(appointment.patient_name || "Patient").slice(0, 100),
       clinicName,
       formatAppointmentDate(appointment.appointment_date),
-      String(appointment.slot || "Time to be confirmed"),
+      appointment.slot === "To be scheduled by clinic" ? "Time to be coordinated by clinic" : String(appointment.slot || "Time to be coordinated by clinic"),
     ];
 
     let logId: string;
