@@ -848,11 +848,11 @@
         alert('Please enter a valid name (2–100 characters).');
         return;
       }
-      if (phone.replace(/\\D/g, '').length < 10 || phone.length > 25) {
+      if (phone.replace(/\D/g, '').length < 10 || phone.length > 25) {
         alert('Please enter a valid contact number.');
         return;
       }
-      if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) || email.length > 254) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
         alert('Please enter a valid email address for PayU checkout.');
         return;
       }
