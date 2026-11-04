@@ -108,7 +108,8 @@ Deno.serve(async (req: Request) => {
     const form = await req.formData();
     const value = (name: string) => String(form.get(name) ?? "");
     const txnid = value("txnid");
-    const status = value("status").toLowerCase();
+    const rawStatus = value("status");
+    const status = rawStatus.toLowerCase();
     const responseHash = value("hash");
     const responseKey = value("key");
     const amount = value("amount");
@@ -143,7 +144,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const expectedHashBase =
-      merchantSalt + "|" + status + "||||||" +
+      merchantSalt + "|" + rawStatus + "||||||" +
       [udf5, udf4, udf3, udf2, udf1, email, firstname, productinfo, amount, txnid, responseKey].join("|");
     const additionalCharges = value("additionalCharges") || value("additional_charges");
     const expectedHash = await sha512(
