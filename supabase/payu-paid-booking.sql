@@ -43,6 +43,8 @@ revoke all on function public.request_patient_appointment(text,text,text,text,da
 grant execute on function public.request_patient_appointment(text,text,text,text,date,text,boolean)
   to service_role;
 
+drop function if exists public.finalize_paid_appointment(text,text,text,integer);
+
 create or replace function public.finalize_paid_appointment(
   p_gateway_txn_id text,
   p_gateway_payment_id text,
