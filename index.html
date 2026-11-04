@@ -476,7 +476,7 @@
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
                   1. Select Clinic / Facility *
                 </label>
-                <select id="selectedClinic" onchange="adjustSlots()" required class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-600 text-sm bg-slate-50 font-medium">
+                <select id="selectedClinic" required class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-600 text-sm bg-slate-50 font-medium">
                   <option value="" disabled selected>-- Choose Clinic --</option>
                 </select>
               </div>
@@ -493,70 +493,50 @@
                 </div>
               </div>
 
-              <!-- STEP 3: CONCERN & DATE -->
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-xs font-bold text-slate-700 mb-1">Clinical Concern *</label>
-                  <select id="clinicalConcern" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-600 text-sm bg-white">
-                    <option value="" disabled selected>Select Primary Symptom</option>
-                    <option value="Depression & Mood Disorder">Depression & Mood Disorder</option>
-                    <option value="Severe Anxiety & Panic Attacks">Severe Anxiety & Panic Attacks</option>
-                    <option value="Obsessive Compulsive Disorder (OCD)">Obsessive Compulsive Disorder (OCD)</option>
-                    <option value="Sleep Disorder / Severe Insomnia">Sleep Disorder / Severe Insomnia</option>
-                    <option value="Bipolar Affective Disorder">Bipolar Affective Disorder</option>
-                    <option value="Substance Use / De-Addiction Support">Substance Use / De-Addiction Support</option>
-                    <option value="General Psychiatric Evaluation">General Psychiatric Evaluation</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label class="block text-xs font-bold text-slate-700 mb-1">Preferred Date *</label>
-                  <input type="date" id="bookingDate" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-600 text-sm">
-                </div>
-              </div>
-
-              <!-- STEP 4: TIME SLOT (DYNAMIC BASED ON CLINIC) -->
+              <!-- STEP 3: PREFERRED DATE -->
               <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Time Window / Slot *</label>
-                <select id="slotTime" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-600 text-sm bg-white">
-                  <option value="" disabled selected>Please select a clinic first</option>
-                </select>
-                <p id="clinicSlotNote" class="text-[11px] text-teal-700 mt-1 italic"></p>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Preferred Appointment Date *</label>
+                <input type="date" id="bookingDate" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-600 text-sm">
               </div>
 
-              <!-- STEP 5: NOTES -->
-              <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Brief Medical Notes / History (Optional)</label>
-                <textarea id="patientHistory" rows="2" placeholder="Mention previous medications or acute symptoms..." class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-600 text-sm"></textarea>
-              </div>
+              <p class="rounded-xl border border-teal-100 bg-teal-50 p-3 text-xs text-teal-900">
+                The clinic team will coordinate your consultation time after reviewing your paid request. Please do not enter medical or emergency details in the booking form.
+              </p>
 
               <!-- PRIVACY / COMMUNICATION CONSENT -->
               <div class="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
                 <label class="flex items-start gap-2.5 cursor-pointer">
                   <input id="notificationConsent" type="checkbox" required class="mt-0.5 h-4 w-4 accent-teal-700 shrink-0">
-                  <span>I agree to be contacted by SMS and WhatsApp about this appointment request. I will not include emergency details or sensitive medical history in this form. My request is pending until clinic staff confirms it.</span>
+                  <span>I agree to be contacted by SMS and WhatsApp about this appointment. I understand that my request is sent to the clinic only after successful online payment, and the appointment remains subject to clinic approval.</span>
                 </label>
               </div>
 
               <!-- SUBMIT BUTTON -->
               <button id="submitBookingBtn" type="submit" class="w-full py-3.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2">
-                <i class="ph-bold ph-paper-plane-tilt text-lg"></i>
-                <span>Submit Appointment Request</span>
+                <i class="ph-bold ph-lock-key text-lg"></i>
+                <span>Continue to Secure Payment</span>
               </button>
 
               <div class="flex items-center justify-between text-xs text-slate-500 pt-2">
                 <span><i class="ph-bold ph-shield-check text-emerald-600"></i> Privacy-conscious appointment request</span>
-                <span class="text-teal-700 font-semibold">SMS + WhatsApp after approval</span>
+                <span class="text-teal-700 font-semibold">Online payment before submission</span>
               </div>
 
             </form>
 
-            <!-- SUCCESS CONFIRMATION MODAL CARD (AFTER SUBMIT) -->
+            <div id="paymentRetryPanel" class="hidden mt-6 rounded-2xl border border-amber-300 bg-amber-50 p-5 text-left">
+              <p class="font-bold text-amber-900">Payment verification is still pending</p>
+              <p id="paymentRetryText" class="text-xs text-amber-900 mt-2"></p>
+              <p id="paymentRetryError" class="text-xs text-rose-700 mt-2"></p>
+              <button id="retryPaymentVerificationBtn" type="button" onclick="retryPaymentVerification()" class="mt-3 rounded-xl bg-amber-700 px-4 py-2 text-sm font-bold text-white">Retry verification</button>
+            </div>
+
+            <!-- SUCCESS CONFIRMATION CARD (AFTER VERIFIED PAYMENT) -->
             <div id="bookingResultCard" class="hidden mt-6 p-6 rounded-2xl bg-teal-50 border border-teal-200 text-slate-800 text-center animate-fade-in space-y-3">
               <div class="w-12 h-12 bg-emerald-600 text-white rounded-full flex items-center justify-center mx-auto text-2xl shadow">
                 <i class="ph-bold ph-check"></i>
               </div>
-              <h4 class="font-bold text-lg text-teal-950">Appointment Request Submitted</h4>
+              <h4 class="font-bold text-lg text-teal-950">Payment Received & Request Submitted</h4>
               <p class="text-xs text-slate-600" id="receiptSummaryText"></p>
               
               <div class="pt-3 flex flex-col sm:flex-row gap-2 justify-center">
@@ -733,6 +713,8 @@
   </div>
   <button type="button" onclick="toggleClinicWhatsappWidget()" class="fixed bottom-6 right-6 z-50 bg-emerald-600 hover:bg-emerald-700 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 transition-all" aria-label="Choose clinic WhatsApp"><i class="ph-bold ph-whatsapp-logo text-3xl"></i></button>
 
+  <!-- Secure Razorpay Checkout; the secret key stays inside Supabase Edge Functions. -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <!-- Supabase client + public configuration (never put service-role keys in the browser) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./config.js"></script>
@@ -771,14 +753,12 @@
       });
     });
 
-    // Clinic options, contact details and routing come from clinics.js.
+    // Clinic options and contact details come from clinics.js.
     const clinicDirectory = Array.isArray(window.CLINIC_CONFIG) ? window.CLINIC_CONFIG : [];
     const clinicByKey = key => clinicDirectory.find(item => item.key === key) || null;
 
     function prefillBooking(clinicKey) {
-      const select = document.getElementById('selectedClinic');
-      select.value = clinicKey;
-      adjustSlots();
+      document.getElementById('selectedClinic').value = clinicKey;
       document.getElementById('book-appointment').scrollIntoView({ behavior: 'smooth' });
     }
 
@@ -821,20 +801,6 @@
     function openClinicWhatsappWidget() { document.getElementById('clinicWhatsappMenu').classList.remove('hidden'); }
     function closeClinicWhatsappWidget() { document.getElementById('clinicWhatsappMenu').classList.add('hidden'); }
 
-    function adjustSlots() {
-      const clinic = clinicByKey(document.getElementById('selectedClinic').value);
-      const slotSelect = document.getElementById('slotTime');
-      const note = document.getElementById('clinicSlotNote');
-      slotSelect.innerHTML = '';
-      if (!clinic) {
-        slotSelect.innerHTML = '<option value="" disabled selected>Please select a clinic first</option>';
-        note.textContent = '';
-        return;
-      }
-      slotSelect.innerHTML = '<option value="" disabled selected>-- Select appointment time --</option>' +
-        (clinic.slots || []).map(function(slot){ return '<option value="' + escapeHtml(slot) + '">' + escapeHtml(slot) + '</option>'; }).join('');
-      note.textContent = clinic.slotNote || 'Choose a preferred time slot.';
-    }
 
     document.getElementById('clinicCards').addEventListener('click', function(e) {
       const button = e.target.closest('[data-book-clinic]');
@@ -859,23 +825,132 @@
       }[ch]));
     }
 
-    // Save the appointment request in Supabase. It remains pending until staff approval.
+    // Create a server-side Razorpay order first. The appointment row is created
+    // only by the payment-finalization Edge Function after Razorpay verifies capture.
+    let pendingPaymentResponse = null;
+    let paymentVerificationBusy = false;
+
+    async function invokePaymentFunction(name, body) {
+      const { data, error } = await supabaseClient.functions.invoke(name, { body });
+      if (error) {
+        let detail = error.message || 'Payment service request failed.';
+        try {
+          if (error.context && typeof error.context.json === 'function') {
+            const payload = await error.context.json();
+            detail = payload.error || payload.message || detail;
+          }
+        } catch (_) {}
+        throw new Error(detail);
+      }
+      if (!data) throw new Error('Payment service returned an empty response.');
+      if (data.error) throw new Error(data.error);
+      return data;
+    }
+
+    function setBookingButtonBusy(isBusy, label) {
+      const button = document.getElementById('submitBookingBtn');
+      button.disabled = isBusy;
+      button.classList.toggle('opacity-60', isBusy);
+      button.classList.toggle('cursor-not-allowed', isBusy);
+      button.querySelector('span').textContent = label || (isBusy ? 'Please wait…' : 'Continue to Secure Payment');
+    }
+
+    async function ensureRazorpayLoaded() {
+      if (window.Razorpay) return;
+      throw new Error('Secure payment checkout could not be loaded. Please refresh the page and try again.');
+    }
+
+    async function finishPaidBooking(paymentResponse) {
+      if (!paymentResponse || paymentVerificationBusy) return;
+      paymentVerificationBusy = true;
+      pendingPaymentResponse = paymentResponse;
+      setBookingButtonBusy(true, 'Verifying payment…');
+      const retryPanel = document.getElementById('paymentRetryPanel');
+      retryPanel.classList.add('hidden');
+      try {
+        const result = await invokePaymentFunction('verify-appointment-payment', {
+          razorpay_order_id: paymentResponse.razorpay_order_id,
+          razorpay_payment_id: paymentResponse.razorpay_payment_id,
+          razorpay_signature: paymentResponse.razorpay_signature
+        });
+        if (result.ok !== true || !result.appointment_id || !result.patient_code) {
+          throw new Error(result.message || 'Payment was verified, but the appointment record is not yet confirmed.');
+        }
+
+        const credentialDetails = result.portal_access_code
+          ? `<p><strong>MindCare Access Code (7 characters):</strong> <span class="font-mono font-bold">${escapeHtml(result.portal_access_code)}</span></p>
+             <p class="text-xs text-slate-600">Save this code securely. It will remain the same for this patient profile.</p>`
+          : `<p class="text-xs text-slate-700">Use the previously issued MindCare Access Code for this patient profile.</p>`;
+
+        const clinicName = result.clinic_name || 'Selected clinic';
+        const requestedDate = result.appointment_date || '';
+        document.getElementById('receiptSummaryText').innerHTML = `
+          <strong>Payment status:</strong> Successfully paid<br>
+          <strong>Appointment request:</strong> Sent to clinic for review<br>
+          <strong>Clinic:</strong> ${escapeHtml(clinicName)}<br>
+          <strong>Preferred date:</strong> ${escapeHtml(requestedDate)}<br>
+          <strong>Amount paid:</strong> ₹${Number(result.consultation_fee || result.amount_paid || 0).toLocaleString('en-IN')}<br>
+          <strong>Payment reference:</strong> ${escapeHtml(paymentResponse.razorpay_payment_id)}<br><br>
+          <div class="rounded-xl border border-teal-200 bg-white p-4 text-left space-y-2">
+            <p class="font-extrabold text-teal-900">Your Patient Portal credentials</p>
+            <p><strong>Patient ID:</strong> <span class="font-mono font-bold">${escapeHtml(result.patient_code)}</span></p>
+            ${credentialDetails}
+            <p class="text-xs text-slate-600">Your Patient Portal remains locked until the clinician approves your appointment.</p>
+          </div>
+          <br><strong>Status: Pending clinic approval.</strong> Payment does not mean the appointment is approved.
+        `;
+
+        const selectedClinic = clinicByKey(result.clinic_key || '');
+        const whatsappBtn = document.getElementById('whatsappConfirmBtn');
+        const waMsg = encodeURIComponent('Assalam o Alaikum, I have paid online and submitted an appointment request. Please let me know when it has been reviewed.');
+        if (selectedClinic && selectedClinic.whatsapp) {
+          whatsappBtn.href = 'https://wa.me/' + selectedClinic.whatsapp + '?text=' + waMsg;
+          whatsappBtn.classList.remove('opacity-50','pointer-events-none');
+          whatsappBtn.textContent = 'Contact ' + selectedClinic.shortName + ' on WhatsApp';
+        } else {
+          whatsappBtn.href = '#';
+          whatsappBtn.classList.add('opacity-50','pointer-events-none');
+          whatsappBtn.textContent = 'Clinic WhatsApp contact not configured';
+        }
+        pendingPaymentResponse = null;
+        retryPanel.classList.add('hidden');
+        document.getElementById('bookingResultCard').classList.remove('hidden');
+        document.getElementById('bookingResultCard').scrollIntoView({ behavior: 'smooth' });
+        document.getElementById('clinicBookingForm').reset();
+      } catch (err) {
+        document.getElementById('paymentRetryText').textContent =
+          'Payment may already be captured, but the appointment is not yet confirmed in the admin queue. Do not pay again. Select Retry verification below.';
+        retryPanel.classList.remove('hidden');
+        document.getElementById('paymentRetryError').textContent = err.message || 'Verification could not be completed.';
+        retryPanel.scrollIntoView({ behavior: 'smooth' });
+      } finally {
+        paymentVerificationBusy = false;
+        setBookingButtonBusy(!!pendingPaymentResponse, pendingPaymentResponse ? 'Payment verification pending' : 'Continue to Secure Payment');
+      }
+    }
+
+    async function retryPaymentVerification() {
+      if (pendingPaymentResponse) await finishPaidBooking(pendingPaymentResponse);
+    }
+
     async function processBooking(event) {
       event.preventDefault();
-      const submitBtn = document.getElementById('submitBookingBtn');
       if (!supabaseClient) {
-        alert('Online booking is not configured yet. Please use the clinic WhatsApp widget or contact the selected clinic desk.');
+        alert('Online booking is not configured. Please contact the selected clinic desk.');
+        return;
+      }
+      if (pendingPaymentResponse) {
+        alert('A payment verification is still pending. Please use the Retry verification button; do not create another payment.');
         return;
       }
 
       const clinicKey = document.getElementById('selectedClinic').value;
       const selectedClinic = clinicByKey(clinicKey);
       if (!selectedClinic) { alert('Please select a valid clinic.'); return; }
+
       const name = document.getElementById('patientFullName').value.trim();
       const phone = document.getElementById('patientContact').value.trim();
-      const concern = document.getElementById('clinicalConcern').value;
       const date = document.getElementById('bookingDate').value;
-      const slot = document.getElementById('slotTime').value;
       const consent = document.getElementById('notificationConsent').checked;
 
       if (!consent) {
@@ -886,7 +961,7 @@
         alert('Please enter a valid name (2–100 characters).');
         return;
       }
-      if (phone.replace(/\D/g, '').length < 10 || phone.length > 25) {
+      if (phone.replace(/\\D/g, '').length < 10 || phone.length > 25) {
         alert('Please enter a valid contact number.');
         return;
       }
@@ -895,73 +970,64 @@
         return;
       }
 
-      submitBtn.disabled = true;
-      submitBtn.classList.add('opacity-60', 'cursor-not-allowed');
-      submitBtn.querySelector('span').textContent = 'Submitting request…';
+      setBookingButtonBusy(true, 'Creating secure payment…');
+      document.getElementById('bookingResultCard').classList.add('hidden');
+      document.getElementById('paymentRetryPanel').classList.add('hidden');
       try {
-        const { data, error } = await supabaseClient.rpc('request_patient_appointment', {
-          p_patient_name: name,
-          p_phone: phone,
-          p_clinic: selectedClinic.key + '::' + selectedClinic.name,
-          p_concern: concern,
-          p_appointment_date: date,
-          p_slot: slot,
-          p_communication_consent: true
+        await ensureRazorpayLoaded();
+        const order = await invokePaymentFunction('create-appointment-payment', {
+          patient_name: name,
+          phone,
+          clinic_key: selectedClinic.key,
+          appointment_date: date,
+          communication_consent: true
         });
-        if (error) throw error;
-        if (!data || !data.patient_code) {
-          throw new Error('Patient ID could not be generated. Please contact the clinic desk.');
+        if (!order.order_id || !order.key_id || !Number(order.amount)) {
+          throw new Error('Payment order was not created. Please contact the clinic desk.');
         }
 
-        const credentialDetails = data.portal_access_code
-          ? `<p><strong>MindCare Access Code (7 characters):</strong> <span class="font-mono font-bold">${escapeHtml(data.portal_access_code)}</span></p>
-             <p class="text-xs text-slate-600">Save this code securely. It will remain the same for this patient profile.</p>`
-          : `<p class="text-xs text-slate-700">This phone number is already linked to a patient profile. The existing MindCare Access Code has not been changed. Please use the previously issued code; the clinic team can view the saved code in the patient profile.</p>`;
-
-        const resultCard = document.getElementById('bookingResultCard');
-        const summaryText = document.getElementById('receiptSummaryText');
-        const whatsappBtn = document.getElementById('whatsappConfirmBtn');
-        summaryText.innerHTML = `
-          <strong>Request status:</strong> Submitted<br>
-          <strong>Clinic:</strong> ${escapeHtml(selectedClinic.name)}<br>
-          <strong>Requested date:</strong> ${escapeHtml(date)}<br>
-          <strong>Preferred slot:</strong> ${escapeHtml(slot)}<br><br>
-          <div class="rounded-xl border border-teal-200 bg-white p-4 text-left space-y-2">
-            <p class="font-extrabold text-teal-900">Your Patient Portal credentials</p>
-            <p><strong>Patient ID:</strong> <span class="font-mono font-bold">${escapeHtml(data.patient_code)}</span></p>
-            ${credentialDetails}
-            <p class="text-xs text-slate-600">Your Patient Portal remains locked until the clinician approves your appointment. After approval, use the permanent credentials to access your records.</p>
-          </div>
-          <br><strong>Status: Pending clinic approval.</strong> This is a request, not a confirmed appointment.
-        `;
-        const waMsg = encodeURIComponent('Assalam o Alaikum, I have submitted an appointment request. Please let me know when it has been reviewed.');
-        if (selectedClinic.whatsapp) {
-          whatsappBtn.href = 'https://wa.me/' + selectedClinic.whatsapp + '?text=' + waMsg;
-          whatsappBtn.classList.remove('opacity-50','pointer-events-none');
-          whatsappBtn.textContent = 'Contact ' + selectedClinic.shortName + ' on WhatsApp';
-        } else {
-          whatsappBtn.href = '#';
-          whatsappBtn.classList.add('opacity-50','pointer-events-none');
-          whatsappBtn.textContent = 'WhatsApp number for ' + selectedClinic.shortName + ' will be added';
-        }
-        resultCard.classList.remove('hidden');
-        resultCard.scrollIntoView({ behavior: 'smooth' });
-        document.getElementById('clinicBookingForm').reset();
-        document.getElementById('slotTime').innerHTML = '<option value="" disabled selected>Please select a clinic first</option>';
-        document.getElementById('clinicSlotNote').innerText = '';
+        const amountInRupees = (Number(order.amount) / 100).toLocaleString('en-IN', { maximumFractionDigits: 2 });
+        const checkout = new window.Razorpay({
+          key: order.key_id,
+          amount: Number(order.amount),
+          currency: order.currency || 'INR',
+          name: 'Mansoor Psychiatry & MindCare Clinic',
+          description: 'Appointment fee — ' + selectedClinic.name,
+          order_id: order.order_id,
+          prefill: { name, contact: phone },
+          notes: { clinic: selectedClinic.name, appointment_date: date },
+          theme: { color: '#0f766e' },
+          modal: {
+            ondismiss: function () {
+              if (!pendingPaymentResponse) setBookingButtonBusy(false);
+            }
+          },
+          handler: function (response) {
+            finishPaidBooking(response);
+          }
+        });
+        checkout.on('payment.failed', function (response) {
+          const reason = response && response.error && (response.error.description || response.error.reason);
+          alert('Payment was not completed. No appointment request was sent to the clinic.' + (reason ? '\\n' + reason : ''));
+          setBookingButtonBusy(false);
+        });
+        setBookingButtonBusy(false);
+        document.querySelector('#submitBookingBtn span').textContent = 'Pay ₹' + amountInRupees + ' Securely';
+        checkout.open();
       } catch (err) {
-        console.error('Appointment save failed:', err);
-        alert('Your request could not be saved. Please try again or contact the selected clinic desk.');
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.classList.remove('opacity-60', 'cursor-not-allowed');
-        submitBtn.querySelector('span').textContent = 'Submit Appointment Request';
+        alert(err.message || 'Could not start online payment. Please try again.');
+        setBookingButtonBusy(false);
       }
     }
 
     function resetBookingForm() {
+      if (pendingPaymentResponse) {
+        alert('Please finish payment verification before starting a new booking.');
+        return;
+      }
       document.getElementById('clinicBookingForm').reset();
       document.getElementById('bookingResultCard').classList.add('hidden');
+      document.getElementById('paymentRetryPanel').classList.add('hidden');
     }
   </script>
 </body>
