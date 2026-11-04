@@ -961,7 +961,7 @@
         alert('Please enter a valid name (2–100 characters).');
         return;
       }
-      if (phone.replace(/\\D/g, '').length < 10 || phone.length > 25) {
+      if (phone.replace(/\D/g, '').length < 10 || phone.length > 25) {
         alert('Please enter a valid contact number.');
         return;
       }
@@ -1011,8 +1011,7 @@
           alert('Payment was not completed. No appointment request was sent to the clinic.' + (reason ? '\\n' + reason : ''));
           setBookingButtonBusy(false);
         });
-        setBookingButtonBusy(false);
-        document.querySelector('#submitBookingBtn span').textContent = 'Pay ₹' + amountInRupees + ' Securely';
+        setBookingButtonBusy(true, 'Waiting for payment…');
         checkout.open();
       } catch (err) {
         alert(err.message || 'Could not start online payment. Please try again.');
