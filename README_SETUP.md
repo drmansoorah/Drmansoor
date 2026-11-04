@@ -51,7 +51,48 @@ supabase secrets set MSG91_TEMPLATE_REJECTED=YOUR_REJECTED_FLOW_TEMPLATE_ID
 
 Check the MSG91 response/logs and adjust the payload variable names if your particular Flow template uses a different schema. A `sent` response means the provider accepted the request, not guaranteed handset delivery.
 
-## 4) WhatsApp setup (Meta WhatsApp Cloud API)
+## 4) Online appointment payments (Razorpay)
+
+The public booking form collects only clinic, patient name, contact number and preferred date. Clinical concern and time-window/slot are not requested. Patients pay the selected clinic's configured consultation fee before an appointment is created.
+
+### Required setup
+
+1. Apply `supabase/razorpay-paid-booking.sql` in Supabase SQL Editor **after** the clinic workspace, clinic routing and patient portal migrations have been applied. This migration creates a private payment-order ledger and revokes public/browser execution of the old appointment-creation RPC. Only the trusted server-side payment finalizer can create a new appointment after a verified capture.
+2. In `admin.html` → Clinic Finance, set a real consultation fee (at least ₹1) for every clinic accepting online bookings. The Razorpay order amount is read from this server-side clinic setting; it is not accepted from the browser.
+3. Create/activate a Razorpay account. Start with Razorpay **Test Mode** keys and test payments. Add these values only in Supabase → Edge Functions → Secrets (never in Git, `config.js`, browser HTML, or this chat):
+   - `RAZORPAY_KEY_ID`
+   - `RAZORPAY_KEY_SECRET`
+   - `RAZORPAY_WEBHOOK_SECRET`
+   - `ALLOWED_ORIGIN=https://drmansoor.vercel.app`
+4. Deploy the three Edge Functions:
+
+```bash
+supabase functions deploy create-appointment-payment --project-ref zzxehneqvnmprlwcohkv
+supabase functions deploy verify-appointment-payment --project-ref zzxehneqvnmprlwcohkv
+supabase functions deploy razorpay-webhook --no-verify-jwt --project-ref zzxehneqvnmprlwcohkv
+```
+
+5. In Razorpay Dashboard → Account & Settings → Webhooks, add this endpoint:
+
+```text
+https://zzxehneqvnmprlwcohkv.supabase.co/functions/v1/razorpay-webhook
+```
+
+Subscribe to the `payment.captured` event, set a webhook secret, and save the same value as `RAZORPAY_WEBHOOK_SECRET` in Supabase Edge Function Secrets. The webhook endpoint has its own HMAC signature verification and is deployed with JWT verification disabled so Razorpay can call it.
+
+### Payment and admin workflow
+
+- The server creates an order using the selected clinic's saved consultation fee. The browser never creates the amount or an appointment row itself.
+- The payment verification function validates Razorpay's checkout signature, fetches the payment from Razorpay, checks the exact amount/currency/order, and captures an authorized payment if required.
+- Only a Razorpay **captured** payment is finalized into an appointment with `status = pending`. The payment is recorded in the clinic payment ledger as paid.
+- A signed Razorpay `payment.captured` webhook provides recovery if the patient's browser closes after payment. The finalization RPC is idempotent, so the same payment event cannot create duplicate appointments.
+- Failed, cancelled, unverified or unpaid checkouts do not create an appointment for the admin.
+- The clinic coordinates the actual consultation time after reviewing the paid request; the database uses an internal placeholder for compatibility, not a patient-selected slot.
+- A payment is not an appointment approval. Admin review and approval are still required. Configure refunds/cancellations with the clinic's published policy and Razorpay account.
+
+Do not use live Razorpay credentials until the account is activated and production payment setup has been verified. Test the full workflow in Test Mode first.
+
+## 5) WhatsApp setup (Meta WhatsApp Cloud API)
 1. Configure a Meta Business app, WhatsApp Business phone number, and approved message templates.
 2. Templates configured below must have four body variables in this order: patient name, date, slot, clinic. Use separate approved template names for approval and rejection. Ensure the patient has opted in.
 3. Set secrets:
@@ -67,15 +108,15 @@ supabase secrets set WHATSAPP_API_VERSION=v22.0
 
 Use a supported Graph API version for your Meta app. WhatsApp business-initiated notifications generally require an approved template and valid opt-in. Provider policy/template approvals are your responsibility.
 
-## 5) Publish the site
+## 6) Publish the site
 Upload `index.html`, `config.js`, and `admin.html` together to a static host (Netlify, Vercel, etc.). The admin URL will be `https://YOUR_DOMAIN/admin.html`. Keep all files in the same site root so the relative `config.js` path works. HTTPS is required for production.
 
 ## How it behaves
-- A patient request is inserted with `status = pending` and can only be inserted as pending through the public browser key.
+- The public browser cannot create appointment rows. A pending appointment is created only after Razorpay reports a captured payment and the server verifies its signature, order, amount and currency. Failed or cancelled payments create no admin request.
 - Patients cannot read existing records. Admin reads are protected by RLS and the `app_metadata.role = admin` claim.
 - The admin decision Edge Function verifies the signed-in user and admin role on the server. It changes the status once, then attempts SMS and WhatsApp messages.
 - If a provider is unconfigured or fails, the appointment status still changes but the dashboard shows notification status so staff can follow up manually.
-- The form does not save free-text medical history. It stores the selected concern category; avoid collecting unnecessary sensitive health data.
+- The public booking form collects clinic, patient name, contact number and preferred date only. It does not ask for clinical concern, time slot or medical history; the clinic coordinates timing after reviewing the paid request.
 
 ## Before going live
 - Verify doctor identity, clinic details, actual schedules, helpline numbers, and permission to publish this website.
