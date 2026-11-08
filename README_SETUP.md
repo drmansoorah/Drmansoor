@@ -51,7 +51,52 @@ supabase secrets set MSG91_TEMPLATE_REJECTED=YOUR_REJECTED_FLOW_TEMPLATE_ID
 
 Check the MSG91 response/logs and adjust the payload variable names if your particular Flow template uses a different schema. A `sent` response means the provider accepted the request, not guaranteed handset delivery.
 
-## 4) WhatsApp setup (Meta WhatsApp Cloud API)
+## 4) Online appointment payments (PayU)
+
+The public booking form collects clinic, patient name, WhatsApp/contact number, email and preferred date. Clinical concern and time-window/slot are not requested. Patients pay the selected clinic's configured consultation fee on PayU Hosted Checkout before any appointment row is created.
+
+### Required setup
+
+1. Apply `supabase/payu-paid-booking.sql` in Supabase SQL Editor **after** the clinic workspace, clinic routing and patient portal migrations. This migration creates a private payment-order ledger and revokes public/browser execution of the old appointment-creation RPC. Only the trusted server-side PayU finalizer can create a new appointment after a verified captured payment.
+2. In `admin.html` → Clinic Finance, set a real consultation fee (at least ₹1) for every clinic accepting online bookings. PayU order amount is read from this server-side clinic setting; it is not accepted from the browser.
+3. In PayU Dashboard, get your **Test Merchant Key** and **Test Salt** first. Add these values only in Supabase → Edge Functions → Secrets (never in Git, `config.js`, browser HTML, or this chat):
+   - `PAYU_MERCHANT_KEY`
+   - `PAYU_MERCHANT_SALT`
+   - `PAYU_ENV=test`
+   - `ALLOWED_ORIGIN=https://drmansoor.vercel.app`
+4. Deploy both Edge Functions with JWT verification disabled because one is called by the public booking form and the other receives PayU's server POST callbacks. They validate the site origin or PayU response hash, respectively:
+
+```bash
+supabase functions deploy create-payu-appointment-payment --no-verify-jwt --project-ref zzxehneqvnmprlwcohkv
+supabase functions deploy payu-appointment-callback --no-verify-jwt --project-ref zzxehneqvnmprlwcohkv
+```
+
+5. In PayU Dashboard → **Developers → Webhooks → Create Webhook**, choose **Payments** and the **Successful** event. Add this URL:
+
+```text
+https://zzxehneqvnmprlwcohkv.supabase.co/functions/v1/payu-appointment-callback?source=webhook
+```
+
+   You may also add the **Failed** event to the same URL. The PayU success/failure redirect URLs are generated automatically by the Edge Function using `?source=return`.
+
+### Payment and admin workflow
+
+- The server creates a unique PayU transaction ID and SHA-512 request hash using the clinic's saved consultation fee and server-only merchant salt.
+- The patient is redirected to PayU Hosted Checkout. PayU posts its response to the callback endpoint.
+- The callback validates PayU's reverse response hash, confirms the exact transaction and amount through PayU's server-side `verify_payment` API, and requires the transaction to be captured before finalizing the booking.
+- PayU's **Successful** server-to-server webhook also calls the same idempotent finalizer. This allows a paid booking to reach Admin even if the patient closes their browser during the redirect.
+- Only a verified captured payment creates an appointment with `status = pending`. The payment is recorded in the clinic payment ledger as paid.
+- Failed, cancelled, pending, unmatched, or unverified payments do not create an appointment for Admin.
+- The clinic coordinates the actual consultation time after reviewing the paid request; an internal placeholder is retained only for compatibility with existing database and notification code.
+- A payment is not an appointment approval. Admin review and approval are still required. The current workflow does not automate refunds; staff must process a refund through PayU Dashboard according to the clinic's refund policy if a paid request is rejected or cannot be accommodated.
+
+### Test before going live
+
+Keep `PAYU_ENV=test` and use PayU Test Key/Salt until the full flow works. Confirm all three cases: a successful captured payment appears once in Admin as Pending and Paid; a failed/cancelled payment does not appear in Admin; a duplicate webhook does not create a duplicate booking. Only after this test should you switch to Production Merchant Key/Salt and set `PAYU_ENV=production`.
+
+PayU Hosted Checkout endpoints: Test `https://test.payu.in/_payment`, Production `https://secure.payu.in/_payment`. PayU Verify Payment API endpoints and hash requirements are documented in the official PayU integration guide. Never add the Salt to a browser request or expose it to patients.
+
+## 5) WhatsApp setup (Meta WhatsApp Cloud API)
 1. Configure a Meta Business app, WhatsApp Business phone number, and approved message templates.
 2. Templates configured below must have four body variables in this order: patient name, date, slot, clinic. Use separate approved template names for approval and rejection. Ensure the patient has opted in.
 3. Set secrets:
@@ -67,15 +112,15 @@ supabase secrets set WHATSAPP_API_VERSION=v22.0
 
 Use a supported Graph API version for your Meta app. WhatsApp business-initiated notifications generally require an approved template and valid opt-in. Provider policy/template approvals are your responsibility.
 
-## 5) Publish the site
+## 6) Publish the site
 Upload `index.html`, `config.js`, and `admin.html` together to a static host (Netlify, Vercel, etc.). The admin URL will be `https://YOUR_DOMAIN/admin.html`. Keep all files in the same site root so the relative `config.js` path works. HTTPS is required for production.
 
 ## How it behaves
-- A patient request is inserted with `status = pending` and can only be inserted as pending through the public browser key.
+- The public browser cannot create appointment rows. A pending appointment is created only after PayU's signed response and Verify Payment API confirm the exact transaction as captured. Failed, cancelled or unverified payments create no admin request.
 - Patients cannot read existing records. Admin reads are protected by RLS and the `app_metadata.role = admin` claim.
 - The admin decision Edge Function verifies the signed-in user and admin role on the server. It changes the status once, then attempts SMS and WhatsApp messages.
 - If a provider is unconfigured or fails, the appointment status still changes but the dashboard shows notification status so staff can follow up manually.
-- The form does not save free-text medical history. It stores the selected concern category; avoid collecting unnecessary sensitive health data.
+- The public booking form collects clinic, patient name, contact number and preferred date only. It does not ask for clinical concern, time slot or medical history; the clinic coordinates timing after reviewing the paid request.
 
 ## Before going live
 - Verify doctor identity, clinic details, actual schedules, helpline numbers, and permission to publish this website.
