@@ -19,6 +19,7 @@
     })();
   </script>
   
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Phosphor Icons -->
@@ -496,7 +497,7 @@
               <!-- STEP 3: PREFERRED DATE -->
               <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">Preferred Date *</label>
-                <input type="date" id="bookingDate" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-600 text-sm">
+                <input type="text" id="bookingDate" required disabled placeholder="Select a clinic first" autocomplete="off" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-600 text-sm bg-slate-100">
               </div>
 
               <!-- STEP 4: NOTES -->
@@ -712,6 +713,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./config.js"></script>
   <script src="./clinics.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
   <!-- SCRIPT FOR CLINIC TIMINGS & BOOKING LOGIC -->
   <script>
@@ -750,9 +752,10 @@
     const clinicDirectory = Array.isArray(window.CLINIC_CONFIG) ? window.CLINIC_CONFIG : [];
     const clinicByKey = key => clinicDirectory.find(item => item.key === key) || null;
 
-    function prefillBooking(clinicKey) {
+    async function prefillBooking(clinicKey) {
       const select = document.getElementById('selectedClinic');
       select.value = clinicKey;
+      await loadPatientAvailableDates();
       document.getElementById('book-appointment').scrollIntoView({ behavior: 'smooth' });
     }
 
@@ -811,6 +814,39 @@
 
     renderClinicDirectory();
 
+    let bookingCalendar = null;
+    let availableBookingDates = new Set();
+    function setupBookingCalendar() {
+      const input = document.getElementById('bookingDate');
+      if (!input || !window.flatpickr) return;
+      bookingCalendar = window.flatpickr(input, {
+        dateFormat: 'Y-m-d', minDate: 'today', disableMobile: true, enable: [],
+        onChange: function(selectedDates, dateStr) {
+          if (dateStr && !availableBookingDates.has(dateStr)) bookingCalendar.clear();
+        }
+      });
+      input.disabled = true;
+    }
+    async function loadPatientAvailableDates() {
+      const input = document.getElementById('bookingDate');
+      const clinicKey = document.getElementById('selectedClinic').value;
+      availableBookingDates = new Set();
+      if (bookingCalendar) { bookingCalendar.set('enable', []); bookingCalendar.clear(); }
+      input.disabled = true;
+      input.placeholder = clinicKey ? 'Loading available dates…' : 'Select a clinic first';
+      if (!clinicKey || !supabaseClient) return;
+      const {data,error} = await supabaseClient.from('clinic_date_availability')
+        .select('available_date').eq('clinic_key', clinicKey).eq('is_available', true)
+        .gte('available_date', new Date().toLocaleDateString('en-CA')).order('available_date', {ascending:true});
+      if (error) { input.placeholder = 'Availability could not load. Please refresh.'; console.error(error); return; }
+      availableBookingDates = new Set((data || []).map(row => row.available_date));
+      if (bookingCalendar) bookingCalendar.set('enable', Array.from(availableBookingDates));
+      input.disabled = availableBookingDates.size === 0;
+      input.placeholder = availableBookingDates.size ? 'Choose an available date' : 'No dates currently available — contact clinic';
+    }
+    setupBookingCalendar();
+    document.getElementById('selectedClinic').addEventListener('change', loadPatientAvailableDates);
+
     // Escape user-provided values before placing them into the status card.
     function escapeHtml(value) {
       return String(value ?? '').replace(/[&<>"']/g, ch => ({
@@ -847,8 +883,8 @@
         alert('Please enter a valid contact number.');
         return;
       }
-      if (!date || date < new Date().toLocaleDateString('en-CA')) {
-        alert('Please select today or a future date.');
+      if (!date || !availableBookingDates.has(date)) {
+        alert('Please select a date made available by the selected clinic.');
         return;
       }
 
@@ -903,6 +939,10 @@
         resultCard.classList.remove('hidden');
         resultCard.scrollIntoView({ behavior: 'smooth' });
         document.getElementById('clinicBookingForm').reset();
+        availableBookingDates = new Set();
+        if (bookingCalendar) { bookingCalendar.set('enable', []); bookingCalendar.clear(); }
+        document.getElementById('bookingDate').disabled = true;
+        document.getElementById('bookingDate').placeholder = 'Select a clinic first';
       } catch (err) {
         console.error('Appointment save failed:', err);
         alert('Your request could not be saved. Please try again or contact the selected clinic desk.');

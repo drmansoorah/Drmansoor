@@ -10,6 +10,12 @@ This package updates the existing single-file clinic website and adds a separate
 - `supabase/functions/appointment-decision/index.ts` — protected Edge Function; admin-only decisions and notification dispatch.
 - `.env.example` — server-side secrets checklist.
 
+## Clinic date availability calendar
+
+After deploying this update, run `supabase/clinic-date-availability.sql` once in Supabase Dashboard → SQL Editor → New query → Run. This creates the clinic availability table, clinic-scoped admin permissions, and a database trigger that rejects new appointment requests for dates not opened by the selected clinic.
+
+In Admin → **Manage available appointment dates**, choose the clinic and date, then click **Mark available**. Use **Make unavailable** to close a date again. The patient booking calendar enables only dates opened by the selected clinic.
+
 ## 1) Create Supabase project
 1. Create a project at https://supabase.com/.
 2. In Project Settings → API, copy the Project URL and anon/public key.
