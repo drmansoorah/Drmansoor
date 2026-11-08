@@ -47,6 +47,18 @@
           </div>
         </div><p id="feeMessage" class="text-xs mt-2 text-slate-500">Set the consultation fee for this clinic.</p>
       </section>
+      <section class="bg-white border border-slate-200 rounded-xl p-4 mb-5">
+        <div class="flex flex-wrap items-end justify-between gap-4">
+          <div><p class="text-[10px] uppercase tracking-widest font-extrabold text-teal-700">Doctor schedule</p><h3 class="font-bold text-lg mt-1">Manage available appointment dates</h3><p class="text-xs text-slate-500 mt-1">Mark dates when the doctor is available. Patients will only be able to select these dates.</p></div>
+          <div class="flex flex-wrap items-end gap-2">
+            <label class="text-xs font-semibold text-slate-600">Clinic<select id="availabilityClinicSelect" class="block mt-1 rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white"></select></label>
+            <label class="text-xs font-semibold text-slate-600">Available date<input id="availabilityDate" type="date" class="block mt-1 rounded-lg border border-slate-300 px-3 py-2 text-sm"></label>
+            <button id="addAvailabilityBtn" class="rounded-lg bg-teal-700 hover:bg-teal-800 text-white px-4 py-2 text-sm font-bold">Mark available</button>
+          </div>
+        </div>
+        <p id="availabilityMessage" class="text-xs mt-2 text-slate-500">Choose a date and mark it available for patient booking.</p>
+        <div id="availabilityDateList" class="mt-3 flex flex-wrap gap-2"><span class="text-xs text-slate-400">No dates loaded.</span></div>
+      </section>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
         <div class="bg-white border rounded-xl p-4"><p class="text-xs text-slate-500">Pending</p><p id="pendingCount" class="text-2xl font-bold">—</p></div>
         <div class="bg-white border rounded-xl p-4"><p class="text-xs text-slate-500">Approved</p><p id="approvedCount" class="text-2xl font-bold">—</p></div>
@@ -116,6 +128,7 @@
   let appointments = [];
   let paymentRows = [];
   let clinicSettings = [];
+  let availabilityRows = [];
   let handoffAppointment = null;
   const clinicDirectory = Array.isArray(window.CLINIC_CONFIG) ? window.CLINIC_CONFIG : [];
   let currentClinicKey = '*';
@@ -142,10 +155,11 @@
     $('clinicAdminAddress').textContent = currentClinic ? currentClinic.address : 'You can view appointments from all three clinics.';
     $('clinicAdminPhone').textContent = currentClinic ? (currentClinic.phoneLabel || 'Clinic contact to be configured') : 'Clinic contacts are managed in clinics.js';
     setupFeeClinicOptions();
+    setupAvailabilityClinicOptions();
     $('dailyDate').value=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
     $('doctorRemittancePanel').classList.toggle('hidden',currentClinicKey==='*');
     if(currentClinicKey==='*')$('remittanceMessage').textContent='Open a clinic-specific login to record that clinic’s transfer to the doctor.';
-    await Promise.all([loadClinicFee(),loadAppointments(),loadDailySummary()]); return true;
+    await Promise.all([loadClinicFee(),loadClinicAvailability(),loadAppointments(),loadDailySummary()]); return true;
   }
   async function loadAppointments() {
     if (!client) { showError('Supabase is not configured. Edit config.js first.'); return; }
@@ -173,6 +187,40 @@
     const options = currentClinicKey==='*' ? clinicDirectory : clinicDirectory.filter(c=>c.key===currentClinicKey);
     $('feeClinicSelect').innerHTML=options.map(c=>'<option value="'+safe(c.key)+'">'+safe(c.name)+'</option>').join('');
     $('feeClinicSelect').disabled=currentClinicKey!=='*';
+  }
+  function setupAvailabilityClinicOptions() {
+    const options=currentClinicKey==='*'?clinicDirectory:clinicDirectory.filter(c=>c.key===currentClinicKey);
+    $('availabilityClinicSelect').innerHTML=options.map(c=>'<option value="'+safe(c.key)+'">'+safe(c.name)+'</option>').join('');
+    $('availabilityClinicSelect').disabled=currentClinicKey!=='*';
+    $('availabilityDate').min=new Date().toLocaleDateString('en-CA');
+  }
+  function selectedAvailabilityClinic(){return $('availabilityClinicSelect').value||currentClinicKey}
+  async function loadClinicAvailability() {
+    if(!client)return;
+    const key=selectedAvailabilityClinic();if(!key||key==='*')return;
+    $('availabilityMessage').textContent='Loading available dates…';
+    const today=new Date().toLocaleDateString('en-CA');
+    const {data,error}=await client.from('clinic_date_availability').select('clinic_key,available_date,is_available')
+      .eq('clinic_key',key).eq('is_available',true).gte('available_date',today)
+      .order('available_date',{ascending:true}).limit(180);
+    if(error){$('availabilityMessage').textContent='Could not load dates: '+error.message;$('availabilityDateList').innerHTML='';return}
+    availabilityRows=data||[];
+    $('availabilityMessage').textContent=availabilityRows.length+' date(s) available for patient booking.';
+    $('availabilityDateList').innerHTML=availabilityRows.length?availabilityRows.map(row=>'<span class="inline-flex items-center gap-2 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 px-3 py-1.5 text-xs font-semibold">'+safe(row.available_date)+'<button type="button" data-unavailable-date="'+safe(row.available_date)+'" class="text-rose-700 hover:text-rose-900 underline">Make unavailable</button></span>').join(''):'<span class="text-xs text-slate-500">No dates opened yet. Add dates above.</span>';
+  }
+  async function setClinicDateAvailability(date,isAvailable) {
+    const key=selectedAvailabilityClinic();
+    if(!key||key==='*'||!date){$('availabilityMessage').textContent='Select a clinic and date.';return}
+    const btn=$('addAvailabilityBtn');btn.disabled=true;
+    try{
+      const {error}=await client.from('clinic_date_availability').upsert({
+        clinic_key:key,available_date:date,is_available:isAvailable,updated_at:new Date().toISOString()
+      },{onConflict:'clinic_key,available_date'});
+      if(error)throw error;
+      $('availabilityMessage').textContent=isAvailable?'Date marked available for patient booking.':'Date closed for patient booking.';
+      await loadClinicAvailability();
+    }catch(e){$('availabilityMessage').textContent='Could not update availability: '+e.message}
+    finally{btn.disabled=false}
   }
   async function loadClinicFee() {
     if(!client)return;
@@ -505,7 +553,10 @@
   $('appointmentsBody').addEventListener('click',e=>{
     const b=e.target.closest('button.decision');if(b){const a=appointments.find(x=>x.id===b.dataset.id);if(a)decide(b.dataset.id,b.dataset.action,b);}
   });
-  $('refreshBtn').addEventListener('click',async()=>{await Promise.all([loadClinicFee(),loadAppointments(),loadDailySummary()])}); $('searchInput').addEventListener('input',renderRows); $('statusFilter').addEventListener('change',renderRows);
+  $('refreshBtn').addEventListener('click',async()=>{await Promise.all([loadClinicFee(),loadClinicAvailability(),loadAppointments(),loadDailySummary()])});
+  $('addAvailabilityBtn').addEventListener('click',()=>setClinicDateAvailability($('availabilityDate').value,true));
+  $('availabilityClinicSelect').addEventListener('change',loadClinicAvailability);
+  $('availabilityDateList').addEventListener('click',e=>{const b=e.target.closest('[data-unavailable-date]');if(b)setClinicDateAvailability(b.dataset.unavailableDate,false)}); $('searchInput').addEventListener('input',renderRows); $('statusFilter').addEventListener('change',renderRows);
   $('saveFeeBtn').addEventListener('click',saveClinicFee); $('feeClinicSelect').addEventListener('change',loadClinicFee);
   $('dailyDate').addEventListener('change',loadDailySummary); $('transferDoctorBtn').addEventListener('click',recordDoctorRemittance);
   $('handoffForm').addEventListener('submit',submitHandoff); $('closeHandoff').addEventListener('click',closeHandoffModal);
