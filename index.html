@@ -476,65 +476,87 @@
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
                   1. Select Clinic / Facility *
                 </label>
-                <select id="selectedClinic" required class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-600 text-sm bg-slate-50 font-medium">
+                <select id="selectedClinic" onchange="adjustSlots()" required class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-600 text-sm bg-slate-50 font-medium">
                   <option value="" disabled selected>-- Choose Clinic --</option>
                 </select>
               </div>
 
-              <!-- STEP 2: PATIENT CONTACT DETAILS -->
+              <!-- STEP 2: PATIENT NAME & PHONE -->
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label class="block text-xs font-bold text-slate-700 mb-1">Patient Full Name *</label>
-                  <input type="text" id="patientFullName" required maxlength="100" placeholder="e.g., Suhail Ahmad" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-600 text-sm">
+                  <input type="text" id="patientFullName" required placeholder="e.g., Suhail Ahmad" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-600 text-sm">
                 </div>
                 <div>
                   <label class="block text-xs font-bold text-slate-700 mb-1">WhatsApp / Contact Number *</label>
-                  <input type="tel" id="patientContact" required maxlength="25" placeholder="+91 XXXXX XXXXX" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-600 text-sm">
-                </div>
-                <div class="sm:col-span-2">
-                  <label class="block text-xs font-bold text-slate-700 mb-1">Email Address *</label>
-                  <input type="email" id="patientEmail" required maxlength="254" autocomplete="email" placeholder="name@example.com" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-600 text-sm">
-                  <p class="text-[11px] text-slate-500 mt-1">PayU requires an email address for secure hosted checkout.</p>
+                  <input type="tel" id="patientContact" required placeholder="+91 XXXXX XXXXX" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-600 text-sm">
                 </div>
               </div>
 
-              <!-- STEP 3: PREFERRED DATE -->
+              <!-- STEP 3: CONCERN & DATE -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Clinical Concern *</label>
+                  <select id="clinicalConcern" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-600 text-sm bg-white">
+                    <option value="" disabled selected>Select Primary Symptom</option>
+                    <option value="Depression & Mood Disorder">Depression & Mood Disorder</option>
+                    <option value="Severe Anxiety & Panic Attacks">Severe Anxiety & Panic Attacks</option>
+                    <option value="Obsessive Compulsive Disorder (OCD)">Obsessive Compulsive Disorder (OCD)</option>
+                    <option value="Sleep Disorder / Severe Insomnia">Sleep Disorder / Severe Insomnia</option>
+                    <option value="Bipolar Affective Disorder">Bipolar Affective Disorder</option>
+                    <option value="Substance Use / De-Addiction Support">Substance Use / De-Addiction Support</option>
+                    <option value="General Psychiatric Evaluation">General Psychiatric Evaluation</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Preferred Date *</label>
+                  <input type="date" id="bookingDate" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-600 text-sm">
+                </div>
+              </div>
+
+              <!-- STEP 4: TIME SLOT (DYNAMIC BASED ON CLINIC) -->
               <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Preferred Appointment Date *</label>
-                <input type="date" id="bookingDate" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-600 text-sm">
+                <label class="block text-xs font-bold text-slate-700 mb-1">Time Window / Slot *</label>
+                <select id="slotTime" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-600 text-sm bg-white">
+                  <option value="" disabled selected>Please select a clinic first</option>
+                </select>
+                <p id="clinicSlotNote" class="text-[11px] text-teal-700 mt-1 italic"></p>
               </div>
 
-              <p class="rounded-xl border border-teal-100 bg-teal-50 p-3 text-xs text-teal-900">
-                The clinic team will coordinate your consultation time after reviewing your paid request. Please do not enter medical or emergency details in the booking form.
-              </p>
+              <!-- STEP 5: NOTES -->
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Brief Medical Notes / History (Optional)</label>
+                <textarea id="patientHistory" rows="2" placeholder="Mention previous medications or acute symptoms..." class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-600 text-sm"></textarea>
+              </div>
 
               <!-- PRIVACY / COMMUNICATION CONSENT -->
               <div class="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
                 <label class="flex items-start gap-2.5 cursor-pointer">
                   <input id="notificationConsent" type="checkbox" required class="mt-0.5 h-4 w-4 accent-teal-700 shrink-0">
-                  <span>I agree to be contacted by SMS and WhatsApp about this appointment. I understand that my request is sent to the clinic only after successful online payment, and the appointment remains subject to clinic approval.</span>
+                  <span>I agree to be contacted by SMS and WhatsApp about this appointment request. I will not include emergency details or sensitive medical history in this form. My request is pending until clinic staff confirms it.</span>
                 </label>
               </div>
 
               <!-- SUBMIT BUTTON -->
               <button id="submitBookingBtn" type="submit" class="w-full py-3.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2">
-                <i class="ph-bold ph-lock-key text-lg"></i>
-                <span>Continue to Secure Payment</span>
+                <i class="ph-bold ph-paper-plane-tilt text-lg"></i>
+                <span>Submit Appointment Request</span>
               </button>
 
               <div class="flex items-center justify-between text-xs text-slate-500 pt-2">
                 <span><i class="ph-bold ph-shield-check text-emerald-600"></i> Privacy-conscious appointment request</span>
-                <span class="text-teal-700 font-semibold">Online payment before submission</span>
+                <span class="text-teal-700 font-semibold">SMS + WhatsApp after approval</span>
               </div>
 
             </form>
 
-            <!-- SUCCESS CONFIRMATION CARD (AFTER VERIFIED PAYMENT) -->
+            <!-- SUCCESS CONFIRMATION MODAL CARD (AFTER SUBMIT) -->
             <div id="bookingResultCard" class="hidden mt-6 p-6 rounded-2xl bg-teal-50 border border-teal-200 text-slate-800 text-center animate-fade-in space-y-3">
               <div class="w-12 h-12 bg-emerald-600 text-white rounded-full flex items-center justify-center mx-auto text-2xl shadow">
                 <i class="ph-bold ph-check"></i>
               </div>
-              <h4 class="font-bold text-lg text-teal-950">Payment Received & Request Submitted</h4>
+              <h4 class="font-bold text-lg text-teal-950">Appointment Request Submitted</h4>
               <p class="text-xs text-slate-600" id="receiptSummaryText"></p>
               
               <div class="pt-3 flex flex-col sm:flex-row gap-2 justify-center">
@@ -711,7 +733,7 @@
   </div>
   <button type="button" onclick="toggleClinicWhatsappWidget()" class="fixed bottom-6 right-6 z-50 bg-emerald-600 hover:bg-emerald-700 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 transition-all" aria-label="Choose clinic WhatsApp"><i class="ph-bold ph-whatsapp-logo text-3xl"></i></button>
 
-<!-- Supabase client + public configuration (never put service-role keys in the browser) -->
+  <!-- Supabase client + public configuration (never put service-role keys in the browser) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./config.js"></script>
   <script src="./clinics.js"></script>
@@ -749,12 +771,14 @@
       });
     });
 
-    // Clinic options and contact details come from clinics.js.
+    // Clinic options, contact details and routing come from clinics.js.
     const clinicDirectory = Array.isArray(window.CLINIC_CONFIG) ? window.CLINIC_CONFIG : [];
     const clinicByKey = key => clinicDirectory.find(item => item.key === key) || null;
 
     function prefillBooking(clinicKey) {
-      document.getElementById('selectedClinic').value = clinicKey;
+      const select = document.getElementById('selectedClinic');
+      select.value = clinicKey;
+      adjustSlots();
       document.getElementById('book-appointment').scrollIntoView({ behavior: 'smooth' });
     }
 
@@ -797,6 +821,20 @@
     function openClinicWhatsappWidget() { document.getElementById('clinicWhatsappMenu').classList.remove('hidden'); }
     function closeClinicWhatsappWidget() { document.getElementById('clinicWhatsappMenu').classList.add('hidden'); }
 
+    function adjustSlots() {
+      const clinic = clinicByKey(document.getElementById('selectedClinic').value);
+      const slotSelect = document.getElementById('slotTime');
+      const note = document.getElementById('clinicSlotNote');
+      slotSelect.innerHTML = '';
+      if (!clinic) {
+        slotSelect.innerHTML = '<option value="" disabled selected>Please select a clinic first</option>';
+        note.textContent = '';
+        return;
+      }
+      slotSelect.innerHTML = '<option value="" disabled selected>-- Select appointment time --</option>' +
+        (clinic.slots || []).map(function(slot){ return '<option value="' + escapeHtml(slot) + '">' + escapeHtml(slot) + '</option>'; }).join('');
+      note.textContent = clinic.slotNote || 'Choose a preferred time slot.';
+    }
 
     document.getElementById('clinicCards').addEventListener('click', function(e) {
       const button = e.target.closest('[data-book-clinic]');
@@ -821,23 +859,23 @@
       }[ch]));
     }
 
-    // PayU Hosted Checkout: the server returns signed form fields and the
-    // appointment is created only by the PayU callback after a captured payment.
+    // Save the appointment request in Supabase. It remains pending until staff approval.
     async function processBooking(event) {
       event.preventDefault();
+      const submitBtn = document.getElementById('submitBookingBtn');
       if (!supabaseClient) {
-        alert('Online booking is not configured. Please contact the selected clinic desk.');
+        alert('Online booking is not configured yet. Please use the clinic WhatsApp widget or contact the selected clinic desk.');
         return;
       }
 
       const clinicKey = document.getElementById('selectedClinic').value;
       const selectedClinic = clinicByKey(clinicKey);
       if (!selectedClinic) { alert('Please select a valid clinic.'); return; }
-
       const name = document.getElementById('patientFullName').value.trim();
       const phone = document.getElementById('patientContact').value.trim();
-      const email = document.getElementById('patientEmail').value.trim();
+      const concern = document.getElementById('clinicalConcern').value;
       const date = document.getElementById('bookingDate').value;
+      const slot = document.getElementById('slotTime').value;
       const consent = document.getElementById('notificationConsent').checked;
 
       if (!consent) {
@@ -852,65 +890,72 @@
         alert('Please enter a valid contact number.');
         return;
       }
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
-        alert('Please enter a valid email address for PayU checkout.');
-        return;
-      }
       if (!date || date < new Date().toLocaleDateString('en-CA')) {
         alert('Please select today or a future date.');
         return;
       }
 
-      const submitBtn = document.getElementById('submitBookingBtn');
       submitBtn.disabled = true;
       submitBtn.classList.add('opacity-60', 'cursor-not-allowed');
-      submitBtn.querySelector('span').textContent = 'Preparing PayU secure checkout…';
+      submitBtn.querySelector('span').textContent = 'Submitting request…';
       try {
-        const { data, error } = await supabaseClient.functions.invoke('create-payu-appointment-payment', {
-          body: {
-            patient_name: name,
-            phone,
-            email,
-            clinic_key: selectedClinic.key,
-            appointment_date: date,
-            communication_consent: true
-          }
+        const { data, error } = await supabaseClient.rpc('request_patient_appointment', {
+          p_patient_name: name,
+          p_phone: phone,
+          p_clinic: selectedClinic.key + '::' + selectedClinic.name,
+          p_concern: concern,
+          p_appointment_date: date,
+          p_slot: slot,
+          p_communication_consent: true
         });
-        if (error) {
-          let detail = error.message || 'PayU payment service could not be started.';
-          try {
-            if (error.context && typeof error.context.json === 'function') {
-              const payload = await error.context.json();
-              detail = payload.error || payload.message || detail;
-            }
-          } catch (_) {}
-          throw new Error(detail);
-        }
-        if (!data || data.error) throw new Error((data && data.error) || 'PayU payment service returned an invalid response.');
-        if (!data.gateway_url || !data.fields || !data.fields.txnid || !data.fields.hash) {
-          throw new Error('PayU did not return a valid secure payment form.');
+        if (error) throw error;
+        if (!data || !data.patient_code) {
+          throw new Error('Patient ID could not be generated. Please contact the clinic desk.');
         }
 
-        const payuForm = document.createElement('form');
-        payuForm.method = 'POST';
-        payuForm.action = data.gateway_url;
-        payuForm.acceptCharset = 'UTF-8';
-        payuForm.style.display = 'none';
-        Object.entries(data.fields).forEach(([name, value]) => {
-          const input = document.createElement('input');
-          input.type = 'hidden';
-          input.name = name;
-          input.value = String(value ?? '');
-          payuForm.appendChild(input);
-        });
-        document.body.appendChild(payuForm);
-        submitBtn.querySelector('span').textContent = 'Redirecting to PayU…';
-        payuForm.submit();
+        const credentialDetails = data.portal_access_code
+          ? `<p><strong>MindCare Access Code (7 characters):</strong> <span class="font-mono font-bold">${escapeHtml(data.portal_access_code)}</span></p>
+             <p class="text-xs text-slate-600">Save this code securely. It will remain the same for this patient profile.</p>`
+          : `<p class="text-xs text-slate-700">This phone number is already linked to a patient profile. The existing MindCare Access Code has not been changed. Please use the previously issued code; the clinic team can view the saved code in the patient profile.</p>`;
+
+        const resultCard = document.getElementById('bookingResultCard');
+        const summaryText = document.getElementById('receiptSummaryText');
+        const whatsappBtn = document.getElementById('whatsappConfirmBtn');
+        summaryText.innerHTML = `
+          <strong>Request status:</strong> Submitted<br>
+          <strong>Clinic:</strong> ${escapeHtml(selectedClinic.name)}<br>
+          <strong>Requested date:</strong> ${escapeHtml(date)}<br>
+          <strong>Preferred slot:</strong> ${escapeHtml(slot)}<br><br>
+          <div class="rounded-xl border border-teal-200 bg-white p-4 text-left space-y-2">
+            <p class="font-extrabold text-teal-900">Your Patient Portal credentials</p>
+            <p><strong>Patient ID:</strong> <span class="font-mono font-bold">${escapeHtml(data.patient_code)}</span></p>
+            ${credentialDetails}
+            <p class="text-xs text-slate-600">Your Patient Portal remains locked until the clinician approves your appointment. After approval, use the permanent credentials to access your records.</p>
+          </div>
+          <br><strong>Status: Pending clinic approval.</strong> This is a request, not a confirmed appointment.
+        `;
+        const waMsg = encodeURIComponent('Assalam o Alaikum, I have submitted an appointment request. Please let me know when it has been reviewed.');
+        if (selectedClinic.whatsapp) {
+          whatsappBtn.href = 'https://wa.me/' + selectedClinic.whatsapp + '?text=' + waMsg;
+          whatsappBtn.classList.remove('opacity-50','pointer-events-none');
+          whatsappBtn.textContent = 'Contact ' + selectedClinic.shortName + ' on WhatsApp';
+        } else {
+          whatsappBtn.href = '#';
+          whatsappBtn.classList.add('opacity-50','pointer-events-none');
+          whatsappBtn.textContent = 'WhatsApp number for ' + selectedClinic.shortName + ' will be added';
+        }
+        resultCard.classList.remove('hidden');
+        resultCard.scrollIntoView({ behavior: 'smooth' });
+        document.getElementById('clinicBookingForm').reset();
+        document.getElementById('slotTime').innerHTML = '<option value="" disabled selected>Please select a clinic first</option>';
+        document.getElementById('clinicSlotNote').innerText = '';
       } catch (err) {
-        alert(err.message || 'Could not start PayU payment. Please try again.');
+        console.error('Appointment save failed:', err);
+        alert('Your request could not be saved. Please try again or contact the selected clinic desk.');
+      } finally {
         submitBtn.disabled = false;
         submitBtn.classList.remove('opacity-60', 'cursor-not-allowed');
-        submitBtn.querySelector('span').textContent = 'Continue to Secure Payment';
+        submitBtn.querySelector('span').textContent = 'Submit Appointment Request';
       }
     }
 
